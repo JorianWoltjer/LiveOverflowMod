@@ -1,6 +1,6 @@
 # LiveOverflowMod
 
-A Minecraft hacked-client for the LiveOverflow Server. Contains various hacks for the challenges on the server, 
+A Minecraft hacked-client for the LiveOverflow Server. Contains various hacks for the challenges on the server,
 and some utilities. 
 
 **Read all about it in my [blog post](https://jorianwoltjer.com/blog/)**.
@@ -12,13 +12,13 @@ and some utilities.
 All movement packets need to be rounded to the 100ths. This is done using a simple `Math.round()` function, 
 and to fix floating point errors the `Math.nextAfter()` function is used.
 
-* [RoundPosition.java](src/main/java/com/jorianwoltjer/liveoverflow/helper/RoundPosition.java): 
+* [RoundPosition.java](src/main/java/com/jorianwoltjer/liveoverflowmod/helper/RoundPosition.java): 
 Does the rounding calculations
-* [PlayerPositionFullPacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflow/mixin/PlayerPositionFullPacketMixin.java):
+* [PlayerPositionFullPacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/PlayerPositionFullPacketMixin.java):
 Intercept the `PlayerMoveC2SPacket.Full` and round the position when sending it to the server
-* [PlayerPositionPacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflow/mixin/PlayerPositionPacketMixin.java):
+* [PlayerPositionPacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/PlayerPositionPacketMixin.java):
 Same as above, but for the `PlayerMoveC2SPacket.PositionAndOnGround` packet
-* [VehicleMovePacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflow/mixin/VehicleMovePacketMixin.java):
+* [VehicleMovePacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/VehicleMovePacketMixin.java):
 Same as above, but for riding a vehicle like a boat
 
 ### WorldGuard Bypass
@@ -33,9 +33,9 @@ So when we can move almost a full block while not crossing the boundary, and the
 
 When this hack is activated using the default `;` (semicolon) keybind, it will allow you to move in this way with your `WASD` keys. 
 
-* [Keybinds.java](src/main/java/com/jorianwoltjer/liveoverflow/client/Keybinds.java):
+* [Keybinds.java](src/main/java/com/jorianwoltjer/liveoverflowmod/client/Keybinds.java):
 When the keybind is pressed, `worldGuardBypassEnabled` is activated and `WASD` keys send the required packets to bypass WorldGuard
-* [LivingEntityMixin.java](src/main/java/com/jorianwoltjer/liveoverflow/mixin/LivingEntityMixin.java):
+* [LivingEntityMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/LivingEntityMixin.java):
 Redirect the `isImmobile()` method to return true when the hack is enabled, so the normal player movement is disabled
 
 ### Reach
@@ -49,11 +49,11 @@ That is exactly what this hack does to the nearest player when pressing the defa
 > This hack is not perfect by any means. It only works when there is a clear line of sight to the player, and sometimes gets
 > stuck while moving meaning you end up somewhere along traveled path. But it's good enough for a proof of concept!
 
-* [KeyBinds.java](src/main/java/com/jorianwoltjer/liveoverflow/client/Keybinds.java):
+* [KeyBinds.java](src/main/java/com/jorianwoltjer/liveoverflowmod/client/Keybinds.java):
 When the keybind is pressed, it will find the nearest player, then calculate and queue a few packets to move towards them.
 Then it will send a packet to hit them, and then a few packets to move back to the original position. Sending the packets 
 may take multiple ticks, so these are remembered and sent when the next tick happens.
-* [ClientPlayerEntityMixin.java](src/main/java/com/jorianwoltjer/liveoverflow/mixin/ClientPlayerEntityMixin.java):
+* [ClientPlayerEntityMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/ClientPlayerEntityMixin.java):
 Cancel the `sendMovementPackets()` method when this hack is traveling, so the client doesn't send any wrong packets by itself
 
 ### Panic
@@ -63,7 +63,7 @@ It does so 1 full second meaning you end up traveling precisely 1000 blocks stra
 like someone trying to kill you. You can then press the default `,` (comma) keybind to go up 1000 blocks and get out of the danger, 
 maybe even logging off at that high position because you cannot be trapped with blocks up there. 
 
-* [KeyBinds.java](src/main/java/com/jorianwoltjer/liveoverflow/client/Keybinds.java):
+* [KeyBinds.java](src/main/java/com/jorianwoltjer/liveoverflowmod/client/Keybinds.java):
 When the keybind is pressed, it will send 5 packets going up 10 blocks each time for 20 ticks in total
 
 ### Insta-Mine
@@ -91,14 +91,14 @@ public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.A
 This allows you to insta-mine some blocks, that were previously really close to being insta-minable. You can for example insta-mine 
 stone and cobblestone with an Efficiency 5 Netherite Pickaxe using this hack.
 
-* [ClientPlayerInteractionMixin.java](src/main/java/com/jorianwoltjer/liveoverflow/mixin/ClientPlayerInteractionMixin.java):
+* [ClientPlayerInteractionMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/ClientPlayerInteractionMixin.java):
 Send the `STOP_DESTROY_BLOCK` action packet right after starting to break a block if it is close enough to be insta-mined
 
 ## Development
 
 ### Building to JAR (IntelliJ)
 
-1. Select `liveoverflow build` task and click green arrow in
+1. Select `liveoverflowmod build` task and click green arrow in
 2. JAR in [build/libs](build/libs)
 
 ### Building and running Minecraft (IntelliJ)

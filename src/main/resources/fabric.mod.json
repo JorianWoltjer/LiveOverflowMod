@@ -1,24 +1,24 @@
 {
   "schemaVersion": 1,
-  "id": "liveoverflow",
+  "id": "liveoverflowmod",
   "version": "${version}",
-  "name": "LiveOverflow",
+  "name": "LiveOverflowMod",
   "description": "A Hacked Client for the LiveOverflow Server",
   "authors": ["J0R1AN"],
   "contact": {},
   "license": "MIT",
-  "icon": "assets/liveoverflow/icon.png",
+  "icon": "assets/liveoverflowmod/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.jorianwoltjer.liveoverflow.LiveOverflowMod"
+      "com.jorianwoltjer.liveoverflowmod.LiveOverflowMod"
     ],
     "client": [
-      "com.jorianwoltjer.liveoverflow.client.ClientEntrypoint"
+      "com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint"
     ]
   },
   "mixins": [
-    "liveoverflow.mixins.json"
+    "liveoverflowmod.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.14.9",
