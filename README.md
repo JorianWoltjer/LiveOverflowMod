@@ -3,7 +3,7 @@
 A Minecraft hacked-client for the LiveOverflow Server. Contains various hacks for the challenges on the server,
 and some utilities. 
 
-**Read all about it in my [blog post](https://jorianwoltjer.com/blog/)**.
+**Read all about it in my [blog post](https://jorianwoltjer.com/blog/post/hacking/playing-on-the-liveoverflow-minecraft-hacking-server)**.
 
 ## Hacks
 
