@@ -31,7 +31,10 @@ This means it can only move `0.06` blocks per tick, and then has to send a posit
 for the next repeat. However, this can be improved because WorldGuard only checks regions when you cross a block boundary. 
 So when we can move almost a full block while not crossing the boundary, and then only move a small amount to cross the boundary. 
 
-When this hack is activated using the default `;` (semicolon) keybind, it will allow you to move in this way with your `WASD` keys. 
+When this hack is activated using the default `;` (semicolon) keybind, it will allow you to move in this way with your `WASD` keys.  
+To activate the **faster** movement mode, you can press your **sprint** key (or toggle). This will enable the trick to
+move faster by moving almost a full block without crossing the boundary, but won't always work in some other plugins that detect `PlayerMoveEvent`s 
+without taking this shortcut. 
 
 * [Keybinds.java](src/main/java/com/jorianwoltjer/liveoverflowmod/client/Keybinds.java):
 When the keybind is pressed, `worldGuardBypassEnabled` is activated and `WASD` keys send the required packets to bypass WorldGuard

@@ -3,6 +3,7 @@ package com.jorianwoltjer.liveoverflowmod.client;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
@@ -132,9 +133,11 @@ public class Keybinds {
                     Vec3d newPos = new Vec3d(client.player.getX() + vec.x, client.player.getY() + vec.y, client.player.getZ() + vec.z);
                     // If able to add more without going over a block boundary, add more
                     boolean extra = false;
-                    while (inSameBlock(newPos.add(vec.multiply(1.5)), new Vec3d(client.player.prevX, client.player.prevY, client.player.prevZ))) {
-                        newPos = newPos.add(vec);
-                        extra = true;
+                    if (client.options.sprintKey.isPressed()) {  // Trigger by sprinting
+                        while (inSameBlock(newPos.add(vec.multiply(1.5)), new Vec3d(client.player.prevX, client.player.prevY, client.player.prevZ))) {
+                            newPos = newPos.add(vec);
+                            extra = true;
+                        }
                     }
 
                     client.player.setPosition(newPos);
