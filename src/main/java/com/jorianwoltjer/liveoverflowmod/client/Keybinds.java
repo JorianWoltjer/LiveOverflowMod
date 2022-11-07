@@ -3,8 +3,8 @@ package com.jorianwoltjer.liveoverflowmod.client;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
@@ -28,26 +28,31 @@ public class Keybinds {
     public static ClientPlayNetworkHandler networkHandler;
 
     private static final KeyBinding worldGuardBypassToggle = new KeyBinding("key.liveoverflowmod.worldguardbypass_toggle",
-                GLFW.GLFW_KEY_SEMICOLON, LIVEOVERFLOW_CATEGORY);  // Bypass WorldGuard region protection
+            GLFW.GLFW_KEY_SEMICOLON, LIVEOVERFLOW_CATEGORY);  // Bypass WorldGuard region protection
     private static final KeyBinding reachKeybind = new KeyBinding("key.liveoverflowmod.reach",
             GLFW.GLFW_KEY_BACKSLASH, LIVEOVERFLOW_CATEGORY);  // Hit the nearest player from far away
     private static final KeyBinding panicKeybind = new KeyBinding("key.liveoverflowmod.panic",
             GLFW.GLFW_KEY_COMMA, LIVEOVERFLOW_CATEGORY);  // Fly up as fast as possible
+    private static final KeyBinding modToggle = new KeyBinding("key.liveoverflowmod.passive_toggle",
+            GLFW.GLFW_KEY_MINUS, LIVEOVERFLOW_CATEGORY);  // Toggle passive mods on/off
 
     public static LinkedList<Packet<?>> packetQueue = new LinkedList<>();
     public static boolean worldGuardBypassEnabled = false;
+    public static boolean passiveModsEnabled = true;
     public static boolean needsHitPacket = false;
+    public static int flyingTimer = 0;
     public static int panicTimer = 0;
-    public static PlayerEntity targetPlayer;
+    public static Entity reachTarget;
     public static Vec3d virtualPosition;
 
     public static void registerKeybinds() {
         KeyBindingHelper.registerKeyBinding(worldGuardBypassToggle);
         KeyBindingHelper.registerKeyBinding(reachKeybind);
         KeyBindingHelper.registerKeyBinding(panicKeybind);
+        KeyBindingHelper.registerKeyBinding(modToggle);
     }
 
-    public static PlayerEntity getClosestPlayer() {
+    public static Entity getClosestPlayer() {
         if (mc.player == null || mc.world == null) {
             return null;
         }
@@ -79,9 +84,19 @@ public class Keybinds {
 
     public static void checkKeybinds(MinecraftClient client) {
         networkHandler = client.getNetworkHandler();
-        if (client.player != null && client.world != null && networkHandler != null) {
+        if (client.player != null && client.world != null && networkHandler != null && client.interactionManager != null) {
+            while (modToggle.wasPressed()) {  // Toggle whole mod
+                passiveModsEnabled = !passiveModsEnabled;
+                if (passiveModsEnabled) {
+                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §aEnabled"), false);
+                } else {
+                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §cDisabled"), false);
+                }
+            }
+
             // Toggle WorldGuard Bypass
             while (worldGuardBypassToggle.wasPressed()) {
+                flyingTimer = 0;
                 if (worldGuardBypassEnabled) {
                     worldGuardBypassEnabled = false;
                     client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rWorldGuard Bypass: §cDisabled"), false);
@@ -93,65 +108,71 @@ public class Keybinds {
 
             // WorldGuard bypass
             if (worldGuardBypassEnabled) {
-                client.player.setVelocity(0, 0, 0);
-
-                Vec3d vec = new Vec3d(0, 0, 0);
-
-                // Key presses changing position
-                if (client.player.input.jumping) {  // Move up
-                    vec = vec.add(new Vec3d(0, 1, 0));
-                } else if (client.player.input.sneaking) {  // Move down
-                    vec = vec.add(new Vec3d(0, -1, 0));
+                if (++flyingTimer > 30) {  // Max 80, to bypass "Flying is not enabled"
+                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(),
+                            client.player.getY() - 0.04, client.player.getZ(), client.player.isOnGround()));
+                    flyingTimer = 0;  // Reset
                 } else {
-                    // Horizontal movement (not at the same time as vertical)
-                    if (client.player.input.pressingForward) {
-                        vec = vec.add(new Vec3d(0, 0, 1));
-                    }
-                    if (client.player.input.pressingRight) {
-                        vec = vec.add(new Vec3d(1, 0, 0));
-                    }
-                    if (client.player.input.pressingBack) {
-                        vec = vec.add(new Vec3d(0, 0, -1));
-                    }
-                    if (client.player.input.pressingLeft) {
-                        vec = vec.add(new Vec3d(-1, 0, 0));
-                    }
-                }
+                    client.player.setVelocity(0, 0, 0);
 
-                if (vec.length() > 0) {
-                    vec = vec.normalize();  // Normalize to length 1
+                    Vec3d vec = new Vec3d(0, 0, 0);
 
-                    if (!(vec.x == 0 && vec.z == 0)) {  // Rotate by looking yaw (won't change length)
-                        double moveAngle = Math.atan2(vec.x, vec.z) + Math.toRadians(client.player.getYaw() + 90);
-                        double x = Math.cos(moveAngle);
-                        double z = Math.sin(moveAngle);
-                        vec = new Vec3d(x, vec.y, z);
-                    }
-
-                    vec = vec.multiply(MAX_DELTA);  // Scale to maxDelta
-
-                    Vec3d newPos = new Vec3d(client.player.getX() + vec.x, client.player.getY() + vec.y, client.player.getZ() + vec.z);
-                    // If able to add more without going over a block boundary, add more
-                    boolean extra = false;
-                    if (client.options.sprintKey.isPressed()) {  // Trigger by sprinting
-                        while (inSameBlock(newPos.add(vec.multiply(1.5)), new Vec3d(client.player.prevX, client.player.prevY, client.player.prevZ))) {
-                            newPos = newPos.add(vec);
-                            extra = true;
+                    // Key presses changing position
+                    if (client.player.input.jumping) {  // Move up
+                        vec = vec.add(new Vec3d(0, 1, 0));
+                    } else if (client.player.input.sneaking) {  // Move down
+                        vec = vec.add(new Vec3d(0, -1, 0));
+                    } else {
+                        // Horizontal movement (not at the same time as vertical)
+                        if (client.player.input.pressingForward) {
+                            vec = vec.add(new Vec3d(0, 0, 1));
+                        }
+                        if (client.player.input.pressingRight) {
+                            vec = vec.add(new Vec3d(1, 0, 0));
+                        }
+                        if (client.player.input.pressingBack) {
+                            vec = vec.add(new Vec3d(0, 0, -1));
+                        }
+                        if (client.player.input.pressingLeft) {
+                            vec = vec.add(new Vec3d(-1, 0, 0));
                         }
                     }
 
-                    client.player.setPosition(newPos);
+                    if (vec.length() > 0) {
+                        vec = vec.normalize();  // Normalize to length 1
 
-                    // Send tiny movement so delta is small enough
-                    PlayerMoveC2SPacket.Full smallMovePacket = new PlayerMoveC2SPacket.Full(client.player.getX(), client.player.getY(),
-                            client.player.getZ(), client.player.getYaw(), client.player.getPitch(), client.player.isOnGround());
-                    networkHandler.getConnection().send(smallMovePacket);
+                        if (!(vec.x == 0 && vec.z == 0)) {  // Rotate by looking yaw (won't change length)
+                            double moveAngle = Math.atan2(vec.x, vec.z) + Math.toRadians(client.player.getYaw() + 90);
+                            double x = Math.cos(moveAngle);
+                            double z = Math.sin(moveAngle);
+                            vec = new Vec3d(x, vec.y, z);
+                        }
 
-                    // Send far away packet for "moving too quickly!" to reset position
-                    if (!extra) {
-                        PlayerMoveC2SPacket.Full farPacket = new PlayerMoveC2SPacket.Full(client.player.getX() + 1337.0, client.player.getY() + 1337.0,
-                                client.player.getZ() + 1337.0, client.player.getYaw(), client.player.getPitch(), client.player.isOnGround());
-                        networkHandler.getConnection().send(farPacket);
+                        vec = vec.multiply(MAX_DELTA);  // Scale to maxDelta
+
+                        Vec3d newPos = new Vec3d(client.player.getX() + vec.x, client.player.getY() + vec.y, client.player.getZ() + vec.z);
+                        // If able to add more without going over a block boundary, add more
+                        boolean extra = false;
+                        if (client.options.sprintKey.isPressed()) {  // Trigger by sprinting
+                            while (inSameBlock(newPos.add(vec.multiply(1.5)), new Vec3d(client.player.prevX, client.player.prevY, client.player.prevZ))) {
+                                newPos = newPos.add(vec);
+                                extra = true;
+                            }
+                        }
+
+                        client.player.setPosition(newPos);
+
+                        // Send tiny movement so delta is small enough
+                        PlayerMoveC2SPacket.Full smallMovePacket = new PlayerMoveC2SPacket.Full(client.player.getX(), client.player.getY(),
+                                client.player.getZ(), client.player.getYaw(), client.player.getPitch(), client.player.isOnGround());
+                        networkHandler.getConnection().send(smallMovePacket);
+
+                        // Send far away packet for "moving too quickly!" to reset position
+                        if (!extra) {
+                            PlayerMoveC2SPacket.Full farPacket = new PlayerMoveC2SPacket.Full(client.player.getX() + 1337.0, client.player.getY() + 1337.0,
+                                    client.player.getZ() + 1337.0, client.player.getYaw(), client.player.getPitch(), client.player.isOnGround());
+                            networkHandler.getConnection().send(farPacket);
+                        }
                     }
                 }
             }
@@ -161,16 +182,16 @@ public class Keybinds {
                 if (packetQueue.size() > 0) {
                     break;  // Already running
                 }
-                targetPlayer = getClosestPlayer();
-                if (targetPlayer != null) {
-                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rReach: §a" + targetPlayer.getEntityName()), false);
+                reachTarget = getClosestPlayer();
+                if (reachTarget != null) {
+                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rReach: §a" + reachTarget.getEntityName()), false);
                     needsHitPacket = true;
                     virtualPosition = client.player.getPos();
                     // Move close enough to player
                     for (int i = 0; i < 5; i++) {  // Max 5 packets per tick
                         // If player is too far away, move closer
-                        if (targetPlayer.squaredDistanceTo(virtualPosition.add(0, client.player.getStandingEyeHeight(), 0)) >= MAX_BREAK_SQUARED_DISTANCE) {
-                            Vec3d movementNeeded = targetPlayer.getPos().subtract(virtualPosition);
+                        if (reachTarget.squaredDistanceTo(virtualPosition.add(0, client.player.getStandingEyeHeight(), 0)) >= MAX_BREAK_SQUARED_DISTANCE) {
+                            Vec3d movementNeeded = reachTarget.getPos().subtract(virtualPosition);
                             double length = movementNeeded.lengthSquared();
 
                             LOGGER.info(String.format("Movement needed: %s (%f)", movementNeeded, length));
@@ -191,10 +212,10 @@ public class Keybinds {
                         }
                     }
                     // Add hit packet and back to original position
-                    addToMiddle(packetQueue, PlayerInteractEntityC2SPacket.attack(targetPlayer, client.player.isSneaking()));
+                    addToMiddle(packetQueue, PlayerInteractEntityC2SPacket.attack(reachTarget, client.player.isSneaking()));
                     packetQueue.add(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(), client.player.getY(), client.player.getZ(), true));
                 } else {
-                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rReach: §cNo players found"), false);
+                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rReach: §cNo targets found"), false);
                 }
             }
 
@@ -228,4 +249,3 @@ public class Keybinds {
         }
     }
 }
-
