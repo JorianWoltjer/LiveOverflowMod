@@ -1,14 +1,19 @@
 package com.jorianwoltjer.liveoverflowmod.client;
 
+import com.jorianwoltjer.liveoverflowmod.mixin.ClientConnectionInvoker;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.LinkedList;
+
+import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
 
 
 public class Keybinds {
@@ -20,15 +25,25 @@ public class Keybinds {
 
     private static final KeyBinding worldGuardBypassToggle = new KeyBinding("key.liveoverflowmod.worldguardbypass_toggle",
             GLFW.GLFW_KEY_SEMICOLON, LIVEOVERFLOW_CATEGORY);  // Bypass WorldGuard region protection
+    private static final KeyBinding reachKeybind = new KeyBinding("key.liveoverflowmod.reach",
+            GLFW.GLFW_KEY_BACKSLASH, LIVEOVERFLOW_CATEGORY);  // Extend reach to infinity
+    private static final KeyBinding panicKeybind = new KeyBinding("key.liveoverflowmod.panic",
+            GLFW.GLFW_KEY_COMMA, LIVEOVERFLOW_CATEGORY);  // Fly up as fast as possible
     private static final KeyBinding modToggle = new KeyBinding("key.liveoverflowmod.passive_toggle",
             GLFW.GLFW_KEY_MINUS, LIVEOVERFLOW_CATEGORY);  // Toggle passive mods on/off
 
+    // packetQueue: [1, 2, 3, 4, 5, A, 4, 3, 2, 1, 0]
+    public static LinkedList<Packet<?>> packetQueue = new LinkedList<>();
     public static boolean worldGuardBypassEnabled = false;
+    public static boolean reachEnabled = false;
     public static boolean passiveModsEnabled = true;
     public static int flyingTimer = 0;
+    public static int panicTimer = 0;
 
     public static void registerKeybinds() {
         KeyBindingHelper.registerKeyBinding(worldGuardBypassToggle);
+        KeyBindingHelper.registerKeyBinding(reachKeybind);
+        KeyBindingHelper.registerKeyBinding(panicKeybind);
         KeyBindingHelper.registerKeyBinding(modToggle);
     }
 
@@ -44,10 +59,12 @@ public class Keybinds {
             while (modToggle.wasPressed()) {  // Toggle whole mod
                 passiveModsEnabled = !passiveModsEnabled;
                 if (passiveModsEnabled) {
-                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §aEnabled"), false);
+                    client.player.sendMessage(Text.of(PREFIX + "Passive Mods: §aEnabled"), true);
                 } else {
-                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §cDisabled"), false);
+                    client.player.sendMessage(Text.of(PREFIX + "Passive Mods: §cDisabled"), true);
                 }
+                // Reload chunks
+                client.worldRenderer.reload();
             }
 
             // Toggle WorldGuard Bypass
@@ -55,18 +72,18 @@ public class Keybinds {
                 flyingTimer = 0;
                 if (worldGuardBypassEnabled) {
                     worldGuardBypassEnabled = false;
-                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rWorldGuard Bypass: §cDisabled"), false);
+                    client.player.sendMessage(Text.of(PREFIX + "WorldGuard Bypass: §cDisabled"), true);
                 } else {
                     worldGuardBypassEnabled = true;
-                    client.player.sendMessage(Text.of("§7[LiveOverflowMod] §rWorldGuard Bypass: §aEnabled"), false);
+                    client.player.sendMessage(Text.of(PREFIX + "WorldGuard Bypass: §aEnabled"), true);
                 }
             }
 
             // WorldGuard bypass
             if (worldGuardBypassEnabled) {
-                if (++flyingTimer > 30) {  // Max 80, to bypass "Flying is not enabled"
-                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(),
-                            client.player.getY() - 0.04, client.player.getZ(), client.player.isOnGround()));
+                if (++flyingTimer > 20) {  // Max 80, to bypass "Flying is not enabled"
+                    ((ClientConnectionInvoker)networkHandler.getConnection())._sendImmediately(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(),
+                            client.player.getY() - 0.04, client.player.getZ(), client.player.isOnGround()), null);
                     flyingTimer = 0;  // Reset
                 } else {
                     client.player.setVelocity(0, 0, 0);
@@ -130,6 +147,44 @@ public class Keybinds {
                             networkHandler.getConnection().send(farPacket);
                         }
                     }
+                }
+            }
+
+            // Reach
+            while (reachKeybind.wasPressed()) {
+                reachEnabled = !reachEnabled;
+                if (reachEnabled) {
+                    client.player.sendMessage(Text.of(PREFIX + "Reach: §aEnabled"), true);
+                } else {
+                    client.player.sendMessage(Text.of(PREFIX + "Reach: §cDisabled"), true);
+                }
+            }
+
+            // Send packets from reach queue (max 5)
+            int movementPacketsLeft = 5;
+            while (packetQueue.size() != 0 && movementPacketsLeft != 0) {
+                Packet<?> packet = packetQueue.remove(0);
+                if (packet instanceof PlayerMoveC2SPacket) {
+                    movementPacketsLeft--;
+                }
+                ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(packet, null);
+            }
+
+            // Panic
+            if (panicKeybind.wasPressed()) {
+                client.player.sendMessage(Text.of(PREFIX + "Panic: §aFlying up 1000 blocks"), true);
+                panicTimer = 20;
+            }
+            if (panicTimer > 0) {
+                panicTimer--;
+                for (int i = 0; i < 5; i++) {  // Max 5 packets per tick
+                    Vec3d pos = client.player.getPos().add(0, 10, 0);  // Max 10 blocks per packet
+                    client.player.setPosition(pos);
+                    client.player.setVelocity(0, 0, 0);
+                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+                }
+                if (panicTimer == 0) {  // If end
+                    client.player.sendMessage(Text.of(PREFIX + "Panic: §cFinished"), true);
                 }
             }
         }

@@ -1,18 +1,25 @@
 package com.jorianwoltjer.liveoverflowmod.mixin;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import org.slf4j.Logger;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import static com.jorianwoltjer.liveoverflowmod.client.Keybinds.*;
 
-@Mixin(net.minecraft.client.network.ClientPlayerInteractionManager.class)
-public class ClientPlayerInteractionMixin {
+@Mixin(ClientPlayerInteractionManager.class)
+public class ClientPlayerInteractionManagerMixin {
+
     // Insta-Mine hack
     @Inject(method = "attackBlock", at = @At(value = "HEAD"), cancellable = true)
     private void attackBlock(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
@@ -29,4 +36,5 @@ public class ClientPlayerInteractionMixin {
             }
         }
     }
+
 }
