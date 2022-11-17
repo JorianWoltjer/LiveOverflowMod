@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.jorianwoltjer.liveoverflowmod.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ClientPlayerInteractionMixin",
+    "LivingEntityMixin",
+    "PlayerPositionFullPacketMixin",
+    "PlayerPositionPacketMixin",
+    "VehicleMovePacketMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+  ]
+}
