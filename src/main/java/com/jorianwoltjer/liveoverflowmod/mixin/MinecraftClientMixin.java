@@ -6,6 +6,7 @@ import net.minecraft.client.render.debug.DebugRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.text.Text;
@@ -90,6 +91,8 @@ public class MinecraftClientMixin {
             // Add hit packet in the middle and original position at the end
             addToMiddle(packetQueue, PlayerInteractEntityC2SPacket.attack(target, client.player.isSneaking()));
             packetQueue.add(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(), client.player.getY(), client.player.getZ(), true));
+            packetQueue.add(new HandSwingC2SPacket(client.player.getActiveHand()));  // Serverside animation
+            client.player.resetLastAttackedTicks();  // Reset attack cooldown
 
         } else {  // Orignal code if not enabled
             ClientPlayerInteractionManagerAccessor _instance = (ClientPlayerInteractionManagerAccessor) instance;

@@ -6,6 +6,7 @@
   "mixins": [
     "AbstractBlockMixin",
     "ClientConnectionInvoker",
+    "ClientConnectionMixin",
     "ClientPlayerInteractionManagerMixin",
     "LivingEntityMixin",
     "PlayerPositionFullPacketMixin",
@@ -18,9 +19,9 @@
   "client": [
     "ClientPlayerEntityAccessor",
     "ClientPlayerEntityMixin",
+    "ClientPlayerInteractionManagerAccessor",
     "ClientPlayNetworkHandlerMixin",
     "GameStateChangeS2CPacketAccessor",
-    "ClientPlayerInteractionManagerAccessor",
     "MinecraftClientMixin"
   ]
 }

@@ -5,20 +5,27 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.item.Items;
 import net.minecraft.network.Packet;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.packet.c2s.play.*;
 import net.minecraft.text.Text;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.LinkedList;
 
+import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
 
 
 public class Keybinds {
     public static final String LIVEOVERFLOW_CATEGORY = "category.liveoverflowmod";
-    public static double MAX_DELTA = 0.05;
+    public static final double MAX_DELTA = 0.05;
+    public static final int OFFHAND = 45;
 
     public static MinecraftClient mc = MinecraftClient.getInstance();
     public static ClientPlayNetworkHandler networkHandler;
@@ -31,11 +38,14 @@ public class Keybinds {
             GLFW.GLFW_KEY_COMMA, LIVEOVERFLOW_CATEGORY);  // Fly up as fast as possible
     private static final KeyBinding modToggle = new KeyBinding("key.liveoverflowmod.passive_toggle",
             GLFW.GLFW_KEY_MINUS, LIVEOVERFLOW_CATEGORY);  // Toggle passive mods on/off
+    private static final KeyBinding placeKeybind = new KeyBinding("key.liveoverflowmod.place",
+            GLFW.GLFW_KEY_RIGHT_BRACKET, LIVEOVERFLOW_CATEGORY);  // Place blocks around you
 
     // packetQueue: [1, 2, 3, 4, 5, A, 4, 3, 2, 1, 0]
     public static LinkedList<Packet<?>> packetQueue = new LinkedList<>();
     public static boolean worldGuardBypassEnabled = false;
     public static boolean reachEnabled = false;
+    public static boolean placeEnabled = false;
     public static boolean passiveModsEnabled = true;
     public static int flyingTimer = 0;
     public static int panicTimer = 0;
@@ -45,6 +55,7 @@ public class Keybinds {
         KeyBindingHelper.registerKeyBinding(reachKeybind);
         KeyBindingHelper.registerKeyBinding(panicKeybind);
         KeyBindingHelper.registerKeyBinding(modToggle);
+        KeyBindingHelper.registerKeyBinding(placeKeybind);
     }
 
     public static boolean inSameBlock(Vec3d vector, Vec3d other) {
@@ -82,7 +93,7 @@ public class Keybinds {
             // WorldGuard bypass
             if (worldGuardBypassEnabled) {
                 if (++flyingTimer > 20) {  // Max 80, to bypass "Flying is not enabled"
-                    ((ClientConnectionInvoker)networkHandler.getConnection())._sendImmediately(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(),
+                    ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(),
                             client.player.getY() - 0.04, client.player.getZ(), client.player.isOnGround()), null);
                     flyingTimer = 0;  // Reset
                 } else {
@@ -162,10 +173,14 @@ public class Keybinds {
 
             // Send packets from reach queue (max 5)
             int movementPacketsLeft = 5;
-            while (packetQueue.size() != 0 && movementPacketsLeft != 0) {
+            int blockBreakPacketsLeft = 1;
+            while (packetQueue.size() > 0 && movementPacketsLeft > 0 && blockBreakPacketsLeft > 0) {
                 Packet<?> packet = packetQueue.remove(0);
-                if (packet instanceof PlayerMoveC2SPacket) {
+                if (packet instanceof PlayerMoveC2SPacket || packet instanceof VehicleMoveC2SPacket) {
                     movementPacketsLeft--;
+                }
+                if (packet instanceof PlayerActionC2SPacket breakPacket && breakPacket.getAction() == PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK) {
+                    blockBreakPacketsLeft--;
                 }
                 ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(packet, null);
             }
@@ -187,6 +202,51 @@ public class Keybinds {
                     client.player.sendMessage(Text.of(PREFIX + "Panic: §cFinished"), true);
                 }
             }
+
+            while (placeKeybind.wasPressed()) {
+                placeEnabled = !placeEnabled;
+                if (placeEnabled) {
+                    client.player.sendMessage(Text.of(PREFIX + "Place: §aEnabled"), true);
+                } else {
+                    client.player.sendMessage(Text.of(PREFIX + "Place: §cDisabled"), true);
+                }
+            }
+            if (placeEnabled) {
+                BlockPos[] positions = {
+                        client.player.getBlockPos().add(0, 2, 0),
+                        client.player.getBlockPos().add(1, 1, 0),
+                        client.player.getBlockPos().add(0, 1, 1),
+                        client.player.getBlockPos().add(-1, 1, 0),
+                        client.player.getBlockPos().add(0, 1, -1),
+                        client.player.getBlockPos().add(1, 0, 0),
+                        client.player.getBlockPos().add(0, 0, 1),
+                        client.player.getBlockPos().add(-1, 0, 0),
+                        client.player.getBlockPos().add(0, 0, -1),
+                };
+                // Check if enough blocks in offhand
+                if (client.player.getOffHandStack().getItem() == Items.COBBLESTONE && client.player.getOffHandStack().getCount() > positions.length) {
+                    for (BlockPos pos : positions) {
+                        if (client.world.getBlockState(pos).isAir()) {  // Only place if empty
+                            placeAt(pos);
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    public static void placeAt(BlockPos pos) {
+        networkHandler.sendPacket(
+                new PlayerInteractBlockC2SPacket(
+                        Hand.OFF_HAND,
+                        new BlockHitResult(
+                                new Vec3d(pos.getX(), pos.getY(), pos.getZ()),
+                                Direction.DOWN,
+                                pos,
+                                false
+                        ),
+                        0
+                )
+        );
     }
 }
