@@ -10,11 +10,11 @@ import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
-import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
-import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.networkHandler;
+import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 
 public class PanicMode extends ToggledHack {
-    int panicFlyingTimer = 0;
+    final double MAX_DELTA = 10;
+    boolean panicActive = false;
 
     /**
      * Fly up and disconnect if the player is in a dangerous situation.
@@ -29,24 +29,12 @@ public class PanicMode extends ToggledHack {
     @Override
     public void tick(MinecraftClient client) {
         super.tick(client);
-        if (client.player == null || client.world == null) return;
+        if (client.world == null) return;
 
-        if (panicFlyingTimer > 0) {  // TODO: make this code simpler
-            panicFlyingTimer--;
-            for (int i = 0; i < 5; i++) {  // Max 5 packets per tick
-                Vec3d pos = client.player.getPos().add(0, 10, 0);  // Max 10 blocks per packet
-                client.player.setVelocity(0, 0, 0);
-                if (client.player.getVehicle() != null) {
-                    ClipCommand.moveVehicleTo(client.player.getVehicle(), pos);
-                } else {
-                    client.player.setPosition(pos);
-                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
-                }
-            }
-            if (panicFlyingTimer == 0) {  // If end, disconnect
-                client.world.disconnect();
-                client.disconnect(new DisconnectedScreen(null, Text.of(PREFIX), Text.of("Panic Mode: §cTriggered")));
-            }
+        if (panicActive && packetQueue.size() == 0) {  // If ended, disconnect
+            panicActive = false;  // Disable for next join
+            client.world.disconnect();
+            client.disconnect(new DisconnectedScreen(null, Text.of(PREFIX), Text.of("Panic Mode: §cTriggered")));
         }
     }
 
@@ -60,8 +48,23 @@ public class PanicMode extends ToggledHack {
     }
 
     public void triggerPanic() {
-        this.enabled = false;
-        panicFlyingTimer = 20;  // 20 ticks = 1 second
+        if (client.player == null) return;
+
+        this.enabled = false;  // Don't trigger repeatedly
+        panicActive = true;
         message("§cTriggered§r, flying up...");
+
+        // Fly up 1000 blocks
+        for (int i = 0; i < 1000/MAX_DELTA; i++) {
+            Vec3d pos = client.player.getPos().add(0, MAX_DELTA, 0);  // Max 10 blocks per packet
+
+            if (client.player.getVehicle() != null) {  // If in boat
+                ClipCommand.moveVehicleTo(client.player.getVehicle(), pos);
+            } else {
+                client.player.setPosition(pos);
+                packetQueue.add(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+            }
+        }
+
     }
 }

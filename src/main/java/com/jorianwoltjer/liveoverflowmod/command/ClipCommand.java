@@ -82,7 +82,7 @@ public class ClipCommand {
             })
         );
 
-        dispatcher.register(literal("vclip")
+        dispatcher.register(literal("boatclip")
             .then(argument("distance", integer())
                 .executes(context -> {
                     int distance = context.getArgument("distance", Integer.class);

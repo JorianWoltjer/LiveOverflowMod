@@ -15,12 +15,12 @@ import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 
 @Mixin(ClientConnection.class)
 public class ClientConnectionMixin {
-    // Log packets
+    // Log packets (for debugging)
     @SuppressWarnings({"EmptyMethod", "CommentedOutCode"})
     @Inject(method = "sendImmediately", at = @At("HEAD"))
     void onSendImmediately(Packet<?> packet, @Nullable PacketCallbacks callbacks, CallbackInfo ci) {
 //        LOGGER.info("---> " + packet.getClass().getSimpleName());
-
+//
 //        if (packet instanceof PlayerMoveC2SPacket _packet) {
 //            LOGGER.info(String.format("PlayerMoveC2SPacket(%.3f, %.3f, %.3f)",
 //                    _packet.getX(0),

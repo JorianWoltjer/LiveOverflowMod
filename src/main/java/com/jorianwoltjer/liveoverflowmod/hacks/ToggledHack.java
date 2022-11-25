@@ -6,6 +6,7 @@ import net.minecraft.text.Text;
 
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
+import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.networkHandler;
 
 public abstract class ToggledHack {
     public static final String LIVEOVERFLOW_CATEGORY = "category.liveoverflowmod";
@@ -37,7 +38,7 @@ public abstract class ToggledHack {
                 onDisable();
             }
         }
-        if (enabled) {
+        if (enabled && networkHandler != null) {  // networkHandler = Safety check
             tickEnabled();
         }
     }
