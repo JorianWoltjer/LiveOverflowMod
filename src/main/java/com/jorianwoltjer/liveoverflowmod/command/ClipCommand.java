@@ -2,7 +2,6 @@ package com.jorianwoltjer.liveoverflowmod.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
@@ -12,7 +11,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
-import static com.jorianwoltjer.liveoverflowmod.client.Keybinds.packetQueue;
+import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.packetQueue;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
@@ -48,9 +47,9 @@ public class ClipCommand {
         dispatcher.register(literal("vault")
             .executes(context -> {
                 PlayerEntity player = context.getSource().getPlayer();
-                assert player != null;
                 Entity vehicle = player.getVehicle();
-                assert vehicle != null;
+
+                if (vehicle == null) return 0;
 
                 LOGGER.info("Pressing start button");
                 pressButtonAt(player, new BlockPos(4729, 125, 1337));  // Start button
@@ -87,11 +86,11 @@ public class ClipCommand {
             .then(argument("distance", integer())
                 .executes(context -> {
                     int distance = context.getArgument("distance", Integer.class);
-
                     PlayerEntity player = context.getSource().getPlayer();
-                    assert player != null;
                     Entity vehicle = player.getVehicle();
-                    assert vehicle != null;
+
+                    if (vehicle == null) return 0;
+
                     clipVehicleTo(vehicle, vehicle.getPos().add(0, distance, 0));
 
                     return 1;
