@@ -18,18 +18,15 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 
 public class ClipCommand {
-    private static void clipVehicleTo(Entity vehicle, Vec3d pos) {
-        packetQueue.add(new VehicleMoveC2SPacket(vehicle));  // Queue packet
-//        networkHandler.sendPacket(new VehicleMoveC2SPacket(vehicle));  // First packet (original position)
+    public static void clipVehicleTo(Entity vehicle, Vec3d pos) {
+        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
         vehicle.updatePosition(pos.x, pos.y, pos.z);
-        packetQueue.add(new VehicleMoveC2SPacket(vehicle));  // Queue packet
-//        networkHandler.sendPacket(new VehicleMoveC2SPacket(vehicle));  // Far packet
+        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
     }
 
-    private static void moveVehicleTo(Entity vehicle, Vec3d pos) {
+    public static void moveVehicleTo(Entity vehicle, Vec3d pos) {
         vehicle.updatePosition(pos.x, pos.y, pos.z);
-        packetQueue.add(new VehicleMoveC2SPacket(vehicle));  // Queue packet
-//        networkHandler.sendPacket(new VehicleMoveC2SPacket(vehicle));  // Far packet
+        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
     }
 
     private static void pressButtonAt(PlayerEntity player, BlockPos pos) {
@@ -99,38 +96,7 @@ public class ClipCommand {
 
                     return 1;
                 })
-            ));
-
-        // Clip into viewing direction
-        dispatcher.register(literal("hclip")
-            .then(argument("distance", integer())
-                .executes(context -> {
-                    int distance = context.getArgument("distance", Integer.class);
-
-                    PlayerEntity player = context.getSource().getPlayer();
-                    assert player != null;
-                    Entity vehicle = player.getVehicle();
-                    assert vehicle != null;
-
-                    double yaw = floatMod(player.getYaw(), 360);
-
-                    if (yaw < 270+45 && yaw > 270-45) {
-                        clipVehicleTo(vehicle, vehicle.getPos().add(distance, 0, 0));
-                    } else if (yaw < 180+45 && yaw > 180-45) {
-                        clipVehicleTo(vehicle, vehicle.getPos().add(0, 0, -distance));
-                    } else if (yaw < 90+45 && yaw > 90-45) {
-                        clipVehicleTo(vehicle, vehicle.getPos().add(-distance, 0, 0));
-                    } else {
-                        clipVehicleTo(vehicle, vehicle.getPos().add(0, 0, distance));
-                    }
-
-                    return 1;
-                })
-            ));
-    }
-
-    private static double floatMod(double x, double y) {
-        // x mod y behaving the same way as Math.floorMod but with doubles
-        return (x - Math.floor(x/y) * y);
+            )
+        );
     }
 }

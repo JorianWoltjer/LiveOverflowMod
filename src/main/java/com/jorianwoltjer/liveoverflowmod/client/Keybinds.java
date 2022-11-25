@@ -1,10 +1,13 @@
 package com.jorianwoltjer.liveoverflowmod.client;
 
+import com.jorianwoltjer.liveoverflowmod.command.ClipCommand;
 import com.jorianwoltjer.liveoverflowmod.mixin.ClientConnectionInvoker;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.DisconnectedScreen;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.*;
@@ -25,7 +28,6 @@ import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
 public class Keybinds {
     public static final String LIVEOVERFLOW_CATEGORY = "category.liveoverflowmod";
     public static final double MAX_DELTA = 0.05;
-    public static final int OFFHAND = 45;
 
     public static MinecraftClient mc = MinecraftClient.getInstance();
     public static ClientPlayNetworkHandler networkHandler;
@@ -34,7 +36,7 @@ public class Keybinds {
             GLFW.GLFW_KEY_SEMICOLON, LIVEOVERFLOW_CATEGORY);  // Bypass WorldGuard region protection
     private static final KeyBinding reachKeybind = new KeyBinding("key.liveoverflowmod.reach",
             GLFW.GLFW_KEY_BACKSLASH, LIVEOVERFLOW_CATEGORY);  // Extend reach to infinity
-    private static final KeyBinding panicKeybind = new KeyBinding("key.liveoverflowmod.panic",
+    private static final KeyBinding panicModeKeybind = new KeyBinding("key.liveoverflowmod.panic",
             GLFW.GLFW_KEY_COMMA, LIVEOVERFLOW_CATEGORY);  // Fly up as fast as possible
     private static final KeyBinding modToggle = new KeyBinding("key.liveoverflowmod.passive_toggle",
             GLFW.GLFW_KEY_MINUS, LIVEOVERFLOW_CATEGORY);  // Toggle passive mods on/off
@@ -46,14 +48,16 @@ public class Keybinds {
     public static boolean worldGuardBypassEnabled = false;
     public static boolean reachEnabled = false;
     public static boolean placeEnabled = false;
+    public static boolean panicModeEnabled = false;
     public static boolean passiveModsEnabled = true;
     public static int flyingTimer = 0;
-    public static int panicTimer = 0;
+    public static int panicFlyingTimer = 0;
+    public static int globalTimer = 0;
 
     public static void registerKeybinds() {
         KeyBindingHelper.registerKeyBinding(worldGuardBypassToggle);
         KeyBindingHelper.registerKeyBinding(reachKeybind);
-        KeyBindingHelper.registerKeyBinding(panicKeybind);
+        KeyBindingHelper.registerKeyBinding(panicModeKeybind);
         KeyBindingHelper.registerKeyBinding(modToggle);
         KeyBindingHelper.registerKeyBinding(placeKeybind);
     }
@@ -65,6 +69,8 @@ public class Keybinds {
     }
 
     public static void checkKeybinds(MinecraftClient client) {
+        globalTimer++;
+
         networkHandler = client.getNetworkHandler();
         if (client.player != null && client.world != null && networkHandler != null && client.interactionManager != null) {
             while (modToggle.wasPressed()) {  // Toggle whole mod
@@ -185,24 +191,40 @@ public class Keybinds {
                 ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(packet, null);
             }
 
-            // Panic
-            if (panicKeybind.wasPressed()) {
-                client.player.sendMessage(Text.of(PREFIX + "Panic: §aFlying up 1000 blocks"), true);
-                panicTimer = 20;
+            // Panic Mode
+            while (panicModeKeybind.wasPressed()) {
+                panicModeEnabled = !panicModeEnabled;
+                if (panicModeEnabled) {
+                    client.player.sendMessage(Text.of(PREFIX + "Panic Mode: §aEnabled"), true);
+                } else {
+                    client.player.sendMessage(Text.of(PREFIX + "Panic Mode: §cDisabled"), true);
+                }
             }
-            if (panicTimer > 0) {
-                panicTimer--;
+            if (panicModeEnabled) {
+                if (client.world.getPlayers().size() > 1) {
+                    triggerPanic();
+                }
+            }
+            if (panicFlyingTimer > 0) {
+                panicFlyingTimer--;
                 for (int i = 0; i < 5; i++) {  // Max 5 packets per tick
                     Vec3d pos = client.player.getPos().add(0, 10, 0);  // Max 10 blocks per packet
-                    client.player.setPosition(pos);
                     client.player.setVelocity(0, 0, 0);
-                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+                    if (client.player.getVehicle() != null) {
+                        ClipCommand.moveVehicleTo(client.player.getVehicle(), pos);
+                    } else {
+                        client.player.setPosition(pos);
+                        networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+                    }
                 }
-                if (panicTimer == 0) {  // If end
-                    client.player.sendMessage(Text.of(PREFIX + "Panic: §cFinished"), true);
+                if (panicFlyingTimer == 0) {  // If end, disconnect
+                    client.world.disconnect();
+                    client.disconnect(new DisconnectedScreen(null, Text.of(PREFIX), Text.of("Panic Mode: §cTriggered")));
+                    return;
                 }
             }
 
+            // Auto-place
             while (placeKeybind.wasPressed()) {
                 placeEnabled = !placeEnabled;
                 if (placeEnabled) {
@@ -232,6 +254,17 @@ public class Keybinds {
                     }
                 }
             }
+
+            // Find Herobrine
+            for (PlayerEntity player : client.world.getPlayers()) {
+                if (player.getName().getString().equals("Herobrine")) {
+                    client.player.sendMessage(Text.of(String.format(PREFIX + "%s%s Found §r(%.2f, %.2f, %.2f)",
+                            player.getName(),
+                            globalTimer % 10 > 5 ? "" : "§a",
+                            player.getX(), player.getY(), player.getZ())), true);
+                    break;
+                }
+            }
         }
     }
 
@@ -248,5 +281,10 @@ public class Keybinds {
                         0
                 )
         );
+    }
+
+    public static void triggerPanic() {
+        panicModeEnabled = false;
+        panicFlyingTimer = 20;  // 20 ticks = 1 second
     }
 }

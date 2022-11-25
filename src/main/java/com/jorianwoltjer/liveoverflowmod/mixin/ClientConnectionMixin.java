@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketCallbacks;
+import net.minecraft.network.listener.PacketListener;
 import net.minecraft.network.packet.c2s.play.*;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.hit.BlockHitResult;
@@ -21,16 +22,15 @@ public class ClientConnectionMixin {
     // Log packets
     @Inject(method = "sendImmediately", at = @At("HEAD"))
     void onSendImmediately(Packet<?> packet, @Nullable PacketCallbacks callbacks, CallbackInfo ci) {
-//        if (packet instanceof PlayerInteractBlockC2SPacket interactPacket) {
-//            BlockHitResult blockHitResult = interactPacket.getBlockHitResult();
-//            LOGGER.info("PlayerInteractBlockC2SPacket: " + blockHitResult.getBlockPos() + " " + blockHitResult.getSide()
-//                    + " " + blockHitResult.getPos() + " " + blockHitResult.isInsideBlock());
-//
-//        }
+//        LOGGER.info("---> " + packet.getClass().getSimpleName());
 
-//        LOGGER.info("Sending packet: " + packet.getClass().getSimpleName());
 //        if (packet instanceof PlayerInteractEntityC2SPacket interactPacket) {
 ////            LOGGER.info("PlayerInteractEntityC2SPacket: " + interactPacket.getT + " " + interactPacket.());
 //        }
+    }
+
+    @Inject(method = "handlePacket", at = @At("HEAD"))
+    private static <T extends PacketListener> void onHandlePacket(Packet<T> packet, PacketListener listener, CallbackInfo ci) {
+//        LOGGER.info("<--- " + packet.getClass().getSimpleName());
     }
 }

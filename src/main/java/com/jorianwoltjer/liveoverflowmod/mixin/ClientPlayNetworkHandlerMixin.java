@@ -5,9 +5,15 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.c2s.play.ClientStatusC2SPacket;
 import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
+import net.minecraft.network.packet.s2c.play.HealthUpdateS2CPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.*;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
+
+import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
+import static com.jorianwoltjer.liveoverflowmod.client.Keybinds.panicModeEnabled;
+import static com.jorianwoltjer.liveoverflowmod.client.Keybinds.triggerPanic;
 
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkHandlerMixin {
@@ -41,5 +47,13 @@ public class ClientPlayNetworkHandlerMixin {
             }
         }
         return reason;
+    }
+
+    // Panic if hit
+    @Inject(method = "onHealthUpdate", at = @At("HEAD"))
+    void onHealthUpdate(HealthUpdateS2CPacket packet, CallbackInfo ci) {
+        if (panicModeEnabled && packet.getHealth() < 20.0F) {
+            triggerPanic();
+        }
     }
 }
