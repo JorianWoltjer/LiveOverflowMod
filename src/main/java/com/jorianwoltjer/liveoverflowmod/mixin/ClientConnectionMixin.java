@@ -28,7 +28,7 @@ import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 
 @Mixin(ClientConnection.class)
 public class ClientConnectionMixin {
-    // Log packets (for debugging)
+    // Log outgoing packets (for debugging)
     @SuppressWarnings({"EmptyMethod", "CommentedOutCode"})
     @Inject(method = "sendImmediately", at = @At("HEAD"))
     void onSendImmediately(Packet<?> packet, @Nullable PacketCallbacks callbacks, CallbackInfo ci) {
@@ -43,25 +43,31 @@ public class ClientConnectionMixin {
 //        }
     }
 
+    // Log incoming packets (for debugging)
     @Inject(method = "handlePacket", at = @At("HEAD"))
     private static <T extends PacketListener> void onHandlePacket(Packet<T> packet, PacketListener listener, CallbackInfo ci) {
 //        LOGGER.info("<--- " + packet.getClass().getSimpleName());
 
+        // Save statistics response
         if (packet instanceof StatisticsS2CPacket statsPacket) {
-            if (client.player == null) return;
-            // Get cobblestone mined stat
+            // Get mined stat for FastBreak
             Integer statsValue = statsPacket.getStatMap().get(Stats.MINED.getOrCreateStat(Block.getBlockFromItem(fastBreakHack.itemToPlace)));
-
             fastBreakHack.onStatResponse(statsValue);
         }
     }
 
+    // Delay other packets while any packets in packetQueue
     @Inject(method = "send*", at = @At("HEAD"), cancellable = true)
     private void normalSend(Packet<?> packet, CallbackInfo ci) {
         if (packetQueue.size() > 0) {
-            LOGGER.info("Cancelled packet: " + packet.getClass().getSimpleName());
-            packetQueue.add(packet);
+            packetQueue.add(packet);  // Do send them later
             ci.cancel();
         }
+    }
+
+    // Clear packet queue
+    @Inject(method = "disconnect", at = @At("HEAD"))
+    void onDisconnect(Text reason, CallbackInfo ci) {
+        packetQueue.clear();
     }
 }
