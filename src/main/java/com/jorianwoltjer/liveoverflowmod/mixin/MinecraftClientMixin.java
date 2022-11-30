@@ -67,29 +67,25 @@ public class MinecraftClientMixin {
             reachHack.message(String.format("Hit §a%s §r(%.1fm)", targetName, target.distanceTo(client.player)));
 
             Vec3d virtualPosition = client.player.getPos();
-            // Move close enough to target
-            while (true) {
-                // If player is too far away, move closer
-                if (target.squaredDistanceTo(virtualPosition.add(0, client.player.getStandingEyeHeight(), 0)) >= MathHelper.square(6.0)) {
-                    Vec3d movement = target.getPos().subtract(virtualPosition);
-                    double length = movement.lengthSquared();
+            Vec3d targetPos = target.getPos().subtract(  // Subtract a bit from the end
+                    target.getPos().subtract(virtualPosition).normalize().multiply(2)
+            );
+            // If player is too far away, move closer
+            while (target.squaredDistanceTo(virtualPosition.add(0, client.player.getStandingEyeHeight(), 0)) >= MathHelper.square(6.0)) {
+                Vec3d movement = targetPos.subtract(virtualPosition);
 
-                    boolean lastPacket = false;
-                    if (length >= 100) {  // Length squared is max 100
-                        // Normalize to length 10
-                        movement = movement.multiply(9.9 / Math.sqrt(length));
-                    } else {  // If short enough, this is last packet
-                        movement = movement.multiply(Math.max(0, Math.sqrt(length) - 2) / 10);  // Reduce length by 2 blocks to prevent collision
-                        lastPacket = true;
-                    }
-                    virtualPosition = virtualPosition.add(movement);
-                    // Add forward and backwards packets
+                boolean lastPacket = false;
+                if (movement.lengthSquared() >= 100) {  // Length squared is max 100 (otherwise "moved too quickly")
+                    // Normalize to length 10
+                    movement = movement.normalize().multiply(9.9);
+                } else {  // If short enough, this is last packet
+                    lastPacket = true;
+                }
+                virtualPosition = virtualPosition.add(movement);
+                // Add forward and backwards packets
+                insertToCenter(packetQueue, new PlayerMoveC2SPacket.PositionAndOnGround(virtualPosition.x, virtualPosition.y, virtualPosition.z, true));
+                if (!lastPacket) {  // If not the last packet, add a backwards packet (only need one at the sheep)
                     insertToCenter(packetQueue, new PlayerMoveC2SPacket.PositionAndOnGround(virtualPosition.x, virtualPosition.y, virtualPosition.z, true));
-                    if (!lastPacket) {  // If not the last packet, add a backwards packet (only need one at the sheep)
-                        insertToCenter(packetQueue, new PlayerMoveC2SPacket.PositionAndOnGround(virtualPosition.x, virtualPosition.y, virtualPosition.z, true));
-                    }
-                } else {
-                    break;
                 }
             }
             // Add hit packet in the middle and original position at the end

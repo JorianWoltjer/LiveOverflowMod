@@ -18,7 +18,6 @@
   },
   "client": [
     "ClientPlayerEntityAccessor",
-    "ClientPlayerEntityMixin",
     "ClientPlayerInteractionManagerAccessor",
     "ClientPlayNetworkHandlerMixin",
     "GameStateChangeS2CPacketAccessor",

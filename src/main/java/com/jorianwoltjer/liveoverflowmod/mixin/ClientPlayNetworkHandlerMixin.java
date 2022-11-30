@@ -1,5 +1,6 @@
 package com.jorianwoltjer.liveoverflowmod.mixin;
 
+import com.jorianwoltjer.liveoverflowmod.hacks.PanicMode;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.c2s.play.ClientStatusC2SPacket;
 import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
@@ -49,7 +50,7 @@ public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "onHealthUpdate", at = @At("HEAD"))
     void onHealthUpdate(HealthUpdateS2CPacket packet, CallbackInfo ci) {
         if (panicModeHack.enabled && packet.getHealth() < 20.0F) {
-            panicModeHack.triggerPanic();
+            panicModeHack.triggerPanic(new PanicMode.PanicReason(PanicMode.PanicReason.Reason.DAMAGE, null, null));
         }
     }
 }

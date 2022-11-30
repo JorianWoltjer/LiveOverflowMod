@@ -1,7 +1,7 @@
 package com.jorianwoltjer.liveoverflowmod.hacks;
 
 import com.jorianwoltjer.liveoverflowmod.mixin.*;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.Entity;
 
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.globalTimer;
@@ -14,6 +14,7 @@ public class PassiveMods extends ToggledHack {
      * - Disable Weird Packets: World Border, Creative Mode, Demo Mode, End Credits
      * - Insta-Mine
      * - Anti-Human Bypass (round coordinates)
+     * - Find Herobrine
      * @see AbstractBlockMixin
      * @see ClientPlayNetworkHandlerMixin
      * @see ClientPlayerInteractionManagerMixin
@@ -31,13 +32,13 @@ public class PassiveMods extends ToggledHack {
         if (client.world == null) return;
 
         // Find Herobrine
-        for (PlayerEntity player : client.world.getPlayers()) {
-            if (player.getName().getString().equals("Herobrine")) {
+        for (Entity entity : client.world.getEntities()) {
+            if (entity.getName().getString().equals("Herobrine")) {
                 message(String.format(
                         "%sFound %s §r(%.1f, %.1f, %.1f)",
                         globalTimer % 8 > 4 ? "" : "§a",  // Blinking
-                        player.getName().getString(),
-                        player.getX(), player.getY(), player.getZ()
+                        entity.getName().getString(),
+                        entity.getX(), entity.getY(), entity.getZ()
                 ));
                 break;
             }

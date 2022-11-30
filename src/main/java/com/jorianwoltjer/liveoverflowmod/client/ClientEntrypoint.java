@@ -22,13 +22,13 @@ public class ClientEntrypoint implements ClientModInitializer {
     public static final WorldGuardBypass worldGuardBypassHack = new WorldGuardBypass();
     public static final Reach reachHack = new Reach();
     public static final PanicMode panicModeHack = new PanicMode();
-    public static final AutoPlace autoPlaceHack = new AutoPlace();
+    public static final FastBreak fastBreakHack = new FastBreak();
     final ToggledHack[] toggledHacks = new ToggledHack[] {
             passiveMods,
             worldGuardBypassHack,
             reachHack,
             panicModeHack,
-            autoPlaceHack,
+            fastBreakHack
     };
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static ClientPlayNetworkHandler networkHandler;

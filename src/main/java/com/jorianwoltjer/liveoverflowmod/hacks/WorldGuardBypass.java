@@ -25,7 +25,7 @@ public class WorldGuardBypass extends ToggledHack {
     public void tickEnabled() {
         if (client.player == null) return;
 
-        if (++flyingTimer > 20) {  // Max 80, to bypass "Flying is not enabled"
+        if (client.options.sprintKey.isPressed() && ++flyingTimer > 20) {  // Max 80, to bypass "Flying is not enabled"
             ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(),
                     client.player.getY() - 0.04, client.player.getZ(), client.player.isOnGround()), null);
             flyingTimer = 0;  // Reset
