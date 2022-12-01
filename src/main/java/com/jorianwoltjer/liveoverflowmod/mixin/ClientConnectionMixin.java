@@ -1,29 +1,20 @@
 package com.jorianwoltjer.liveoverflowmod.mixin;
 
+import com.jorianwoltjer.liveoverflowmod.hacks.ToggledHack;
 import net.minecraft.block.Block;
-import net.minecraft.item.Items;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.listener.PacketListener;
-import net.minecraft.network.packet.c2s.play.KeepAliveC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.s2c.play.StatisticsS2CPacket;
-import net.minecraft.stat.Stat;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Map;
-import java.util.Queue;
-
-import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 
 @Mixin(ClientConnection.class)
@@ -69,5 +60,8 @@ public class ClientConnectionMixin {
     @Inject(method = "disconnect", at = @At("HEAD"))
     void onDisconnect(Text reason, CallbackInfo ci) {
         packetQueue.clear();
+        for (ToggledHack hack : toggledHacks) {
+            hack.disable();
+        }
     }
 }

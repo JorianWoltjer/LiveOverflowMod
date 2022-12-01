@@ -31,12 +31,7 @@ public abstract class ToggledHack {
      */
     public void tick(MinecraftClient client) {  // Called every tick
         if (keybind.wasPressed()) {
-            enabled = !enabled;
-            if (enabled) {
-                onEnable();
-            } else {
-                onDisable();
-            }
+            toggle();
         }
         if (enabled && networkHandler != null) {  // networkHandler = Safety check
             tickEnabled();
@@ -44,23 +39,46 @@ public abstract class ToggledHack {
     }
 
     /**
+     * Toggle the hack on/off
+     */
+    void toggle() {
+        if (enabled) {
+            disable();
+        } else {
+            enable();
+        }
+    }
+
+    /**
      * Called every tick, but only when the hack is enabled
      */
-    public void tickEnabled() {}
+    void tickEnabled() {}
 
     /**
      * Called when the hack is enabled
      */
-    void onEnable() {
+    public void enable() {
+        enabled = true;
         message("§aEnabled");
+        onEnable();
     }
+    /**
+     * Overridable method to add extra functionality when the hack is enabled
+     */
+    void onEnable() {}
 
     /**
      * Called when the hack is disabled
      */
-    void onDisable() {
+    public void disable() {
+        enabled = false;
         message("§cDisabled");
+        onDisable();
     }
+    /**
+     * Overridable method to add extra functionality when the hack is disabled
+     */
+    void onDisable() {}
 
     /**
      * Send a message via the action bar with the prefix

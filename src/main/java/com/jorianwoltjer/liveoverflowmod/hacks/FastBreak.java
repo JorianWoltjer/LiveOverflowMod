@@ -68,7 +68,6 @@ public class FastBreak extends ToggledHack {
 
     @Override
     public void onEnable() {
-        super.onEnable();
         if (client.player == null) return;
 
         timer = 0;

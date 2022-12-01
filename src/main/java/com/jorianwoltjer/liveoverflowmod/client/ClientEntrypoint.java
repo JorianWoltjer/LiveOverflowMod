@@ -23,7 +23,7 @@ public class ClientEntrypoint implements ClientModInitializer {
     public static final Reach reachHack = new Reach();
     public static final PanicMode panicModeHack = new PanicMode();
     public static final FastBreak fastBreakHack = new FastBreak();
-    final ToggledHack[] toggledHacks = new ToggledHack[] {
+    public static final ToggledHack[] toggledHacks = new ToggledHack[] {
             passiveMods,
             worldGuardBypassHack,
             reachHack,

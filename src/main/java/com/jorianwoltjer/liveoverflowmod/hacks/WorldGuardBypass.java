@@ -96,8 +96,6 @@ public class WorldGuardBypass extends ToggledHack {
 
     @Override
     public void onDisable() {
-        super.onDisable();
-
         flyingTimer = 0;
     }
 

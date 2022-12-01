@@ -47,15 +47,11 @@ public class PassiveMods extends ToggledHack {
 
     @Override
     public void onEnable() {
-        super.onEnable();
-
         client.worldRenderer.reload();  // Reload chunks (for Texture Rotations)
     }
 
     @Override
     public void onDisable() {
-        super.onDisable();
-
         client.worldRenderer.reload();  // Reload chunks (for Texture Rotations)
     }
 }
