@@ -72,6 +72,7 @@ public class FastBreak extends ToggledHack {
 
         timer = 0;
         statsTimer = 0;
+        statsValue = -1;
         itemToPlace = client.player.getOffHandStack().getItem();
 
         networkHandler.sendPacket(new ClientStatusC2SPacket(ClientStatusC2SPacket.Mode.REQUEST_STATS));  // Send initial

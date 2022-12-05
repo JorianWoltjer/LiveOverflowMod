@@ -24,7 +24,8 @@ public class PassiveMods extends ToggledHack {
      */
     public PassiveMods() {
         super("Passive Mods", GLFW_KEY_MINUS);
-        this.enabled = true;  // Default on
+        this.defaultEnabled = true;
+        this.enabled = defaultEnabled;
     }
 
     @Override
@@ -52,6 +53,8 @@ public class PassiveMods extends ToggledHack {
 
     @Override
     public void onDisable() {
-        client.worldRenderer.reload();  // Reload chunks (for Texture Rotations)
+        if (client.world != null) {
+            client.worldRenderer.reload();  // Reload chunks (for Texture Rotations)
+        }
     }
 }

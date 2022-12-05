@@ -15,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Arrays;
+
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 
 @Mixin(ClientConnection.class)
@@ -61,7 +63,9 @@ public class ClientConnectionMixin {
     void onDisconnect(Text reason, CallbackInfo ci) {
         packetQueue.clear();
         for (ToggledHack hack : toggledHacks) {
-            hack.disable();
+            if (hack.enabled != hack.defaultEnabled) {
+                hack.toggle();
+            }
         }
     }
 }

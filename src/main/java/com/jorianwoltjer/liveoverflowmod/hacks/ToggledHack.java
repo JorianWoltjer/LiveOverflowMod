@@ -5,6 +5,7 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.text.Text;
 
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
+import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.networkHandler;
 
@@ -13,7 +14,8 @@ public abstract class ToggledHack {
 
     public final KeyBinding keybind;
     public final String name;
-    public boolean enabled = false;
+    public boolean defaultEnabled = false;
+    public boolean enabled = defaultEnabled;
 
     /**
      * A hack that can be toggled on/off
@@ -41,7 +43,7 @@ public abstract class ToggledHack {
     /**
      * Toggle the hack on/off
      */
-    void toggle() {
+    public void toggle() {
         if (enabled) {
             disable();
         } else {
@@ -60,6 +62,7 @@ public abstract class ToggledHack {
     public void enable() {
         enabled = true;
         message("§aEnabled");
+        LOGGER.info("Enabled " + name);
         onEnable();
     }
     /**
@@ -73,6 +76,7 @@ public abstract class ToggledHack {
     public void disable() {
         enabled = false;
         message("§cDisabled");
+        LOGGER.info("Disabled " + name);
         onDisable();
     }
     /**
@@ -88,5 +92,9 @@ public abstract class ToggledHack {
         if (client.player == null) return;
 
         client.player.sendMessage(Text.of(PREFIX + name + ": " + message), true);
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 }
