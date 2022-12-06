@@ -5,8 +5,10 @@ import com.jorianwoltjer.liveoverflowmod.mixin.ClientPlayNetworkHandlerMixin;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.DisconnectedScreen;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
@@ -74,7 +76,7 @@ public class PanicMode extends ToggledHack {
             Vec3d pos = client.player.getPos().add(0, MAX_DELTA, 0);  // Max 10 blocks per packet
 
             if (client.player.getVehicle() != null) {  // If in boat
-                ClipCommand.moveVehicleTo(client.player.getVehicle(), pos);
+                moveVehicleTo(client.player.getVehicle(), pos);
             } else {
                 client.player.setPosition(pos);
                 packetQueue.add(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
@@ -100,4 +102,8 @@ public class PanicMode extends ToggledHack {
         }
     }
 
+    public static void moveVehicleTo(Entity vehicle, Vec3d pos) {
+        vehicle.updatePosition(pos.x, pos.y, pos.z);
+        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
+    }
 }

@@ -3,13 +3,15 @@ package com.jorianwoltjer.liveoverflowmod.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -18,33 +20,17 @@ import net.minecraft.util.math.Vec3d;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
-import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 
 public class ClipCommand {
-    public static void clipVehicleTo(Entity vehicle, Vec3d pos) {
-        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
-        vehicle.updatePosition(pos.x, pos.y, pos.z);
-        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
-    }
+    private static void interactAt(BlockPos pos) {
+        if (client.interactionManager == null) return;
 
-    public static void moveVehicleTo(Entity vehicle, Vec3d pos) {
-        vehicle.updatePosition(pos.x, pos.y, pos.z);
-        packetQueue.add(new VehicleMoveC2SPacket(vehicle));
-    }
-
-    private static void pressButtonAt(PlayerEntity player, BlockPos pos) {
-        networkHandler.sendPacket(
-                new PlayerInteractBlockC2SPacket(
-                        player.preferredHand,
-                        new BlockHitResult(
-                                new Vec3d(pos.getX(), pos.getY(), pos.getZ()),
-                                Direction.DOWN,
-                                pos,
-                                false
-                        ),
-                        0
-                )
-        );
+        client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND, new BlockHitResult(
+                new Vec3d(pos.getX(), pos.getY(), pos.getZ()),
+                Direction.DOWN,
+                pos,
+                false
+        ));
     }
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
@@ -53,7 +39,7 @@ public class ClipCommand {
                     PlayerEntity player = context.getSource().getPlayer();
                     Vec3d pos = player.getPos();
 
-                    pressButtonAt(player, new BlockPos(4729, 125, 1337));  // Start button
+                    interactAt(new BlockPos(4729, 125, 1337));  // Start button
 
                     // y += 53.0
                     for (int i = 0; i < 5; i++) {
@@ -76,7 +62,7 @@ public class ClipCommand {
                     networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
                     player.setPosition(pos);
 
-                    pressButtonAt(player, new BlockPos(4780, 125, 1336));  // End button
+                    interactAt(new BlockPos(4780, 125, 1336));  // End button
 
                     return 1;
                 })
@@ -126,8 +112,10 @@ public class ClipCommand {
 
         dispatcher.register(literal("clubmate")
                 .executes(context -> {
-                    PlayerEntity player = context.getSource().getPlayer();
+                    clipTo(new Vec3d(1331, 89, 1330));
 
+                    assert client.player != null;
+                    interactAt(new BlockPos(1331, 89, 1331));  // Chest
 
                     return 1;
                 })
