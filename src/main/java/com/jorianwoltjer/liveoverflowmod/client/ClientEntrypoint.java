@@ -52,7 +52,7 @@ public class ClientEntrypoint implements ClientModInitializer {
         networkHandler = client.getNetworkHandler();
         globalTimer++;
 
-        // Send packets from reach queue (max 5)
+        // Send packets from queue (max 5)
         int movementPacketsLeft = 5;
         while (packetQueue.size() > 0 && movementPacketsLeft > 0) {
             Packet<?> packet = packetQueue.remove(0);
@@ -61,6 +61,7 @@ public class ClientEntrypoint implements ClientModInitializer {
             }
             ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(packet, null);
         }
+
     }
 
     public static void registerCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {

@@ -1,17 +1,21 @@
 package com.jorianwoltjer.liveoverflowmod.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
+import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
-import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.packetQueue;
+import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
@@ -29,7 +33,7 @@ public class ClipCommand {
     }
 
     private static void pressButtonAt(PlayerEntity player, BlockPos pos) {
-        packetQueue.add(
+        networkHandler.sendPacket(
                 new PlayerInteractBlockC2SPacket(
                         player.preferredHand,
                         new BlockHitResult(
@@ -45,57 +49,150 @@ public class ClipCommand {
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         dispatcher.register(literal("vault")
-            .executes(context -> {
-                PlayerEntity player = context.getSource().getPlayer();
-                Entity vehicle = player.getVehicle();
+                .executes(context -> {
+                    PlayerEntity player = context.getSource().getPlayer();
+                    Vec3d pos = player.getPos();
 
-                if (vehicle == null) return 0;
+                    pressButtonAt(player, new BlockPos(4729, 125, 1337));  // Start button
 
-                LOGGER.info("Pressing start button");
-                pressButtonAt(player, new BlockPos(4729, 125, 1337));  // Start button
+                    // y += 53.0
+                    for (int i = 0; i < 5; i++) {
+                        pos = pos.add(0, 9.9, 0);
+                        networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+                    }
+                    pos = pos.add(0, 3.5, 0);
+                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
 
-                // y += 53.0
-                LOGGER.info("Moving to ceiling right above end button");
-                moveVehicleTo(vehicle, vehicle.getPos().add(0, 9.9, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(0, 9.9, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(0, 9.9, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(0, 9.9, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(0, 9.9, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(0, 3.5, 0));
+                    // x += 53.0
+                    for (int i = 0; i < 5; i++) {
+                        pos = pos.add(9.9, 0, 0);
+                        networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+                    }
+                    pos = pos.add(3.0, 0, 0);
+                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
 
-                // x += 53.0
-                moveVehicleTo(vehicle, vehicle.getPos().add(9.9, 0, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(9.9, 0, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(9.9, 0, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(9.9, 0, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(9.9, 0, 0));
-                moveVehicleTo(vehicle, vehicle.getPos().add(3.0, 0, 0));
+                    // y -= 53.0 (through box)
+                    pos = pos.add(0, -53, 0);
+                    networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+                    player.setPosition(pos);
 
-                // y -= 53.0 (through box)
-                LOGGER.info("Clipping down through box");
-                clipVehicleTo(vehicle, vehicle.getPos().add(0, -53, 0));
+                    pressButtonAt(player, new BlockPos(4780, 125, 1336));  // End button
 
-                LOGGER.info("Pressing end button");
-                pressButtonAt(player, new BlockPos(4780, 125, 1336));  // End button
-
-                return 1;
-            })
+                    return 1;
+                })
         );
 
-        dispatcher.register(literal("boatclip")
+        dispatcher.register(literal("vclip")
             .then(argument("distance", integer())
                 .executes(context -> {
                     int distance = context.getArgument("distance", Integer.class);
                     PlayerEntity player = context.getSource().getPlayer();
-                    Entity vehicle = player.getVehicle();
 
-                    if (vehicle == null) return 0;
+                    Vec3d pos = player.getPos();
+                    Vec3d targetPos = pos.add(0, distance, 0);
 
-                    clipVehicleTo(vehicle, vehicle.getPos().add(0, distance, 0));
+                    clipTo(targetPos);
 
                     return 1;
                 })
             )
         );
+
+        dispatcher.register(literal("hclip")
+            .then(argument("distance", integer())
+                .executes(context -> {
+                    int distance = context.getArgument("distance", Integer.class);
+                    PlayerEntity player = context.getSource().getPlayer();
+
+                    Vec3d pos = player.getPos();
+                    // Move into players viewing direction
+                    Vec3d targetPos = pos.add(player.getRotationVector().multiply(1, 0, 1).multiply(distance));
+
+                    clipTo(targetPos);
+
+                    return 1;
+                })
+            )
+        );
+
+        dispatcher.register(literal("autoclip")
+            .then(literal("up")
+                .executes(context -> executeAutoClip(context, 1))
+            )
+            .then(literal("down")
+                .executes(context -> executeAutoClip(context, -1))
+            )
+        );
+
+        dispatcher.register(literal("clubmate")
+                .executes(context -> {
+                    PlayerEntity player = context.getSource().getPlayer();
+
+
+                    return 1;
+                })
+        );
+    }
+
+    private static void clipTo(Vec3d targetPos) {
+        if (client.player == null) return;
+
+        Vec3d pos = client.player.getPos();
+
+        Packet<?> homePacket;
+        Packet<?> targetPacket;
+        if (client.player.getVehicle() != null) {
+            homePacket = new VehicleMoveC2SPacket(client.player.getVehicle());
+            client.player.getVehicle().setPosition(targetPos);
+            targetPacket = new VehicleMoveC2SPacket(client.player.getVehicle());
+        } else {
+            homePacket = new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, false);
+            targetPacket = new PlayerMoveC2SPacket.PositionAndOnGround(targetPos.x, targetPos.y, targetPos.z, false);
+        }
+
+        for (int i = 0; i < 18; i++) {  // Send a lot of the same movement packets to increase max travel distance
+            networkHandler.sendPacket(homePacket);
+        }
+        // Send one big movement packet to actually move the player
+        networkHandler.sendPacket(targetPacket);
+        client.player.setPosition(targetPos);
+    }
+
+    private static int executeAutoClip(CommandContext<FabricClientCommandSource> context, int direction) {
+        if (client.player == null) return 0;
+
+        Vec3d pos = getAutoClipPos(direction);
+        if (pos == null) {
+            context.getSource().sendFeedback(Text.of("§cNo valid position found within 150 blocks"));
+            return 0;
+        } else {
+            context.getSource().sendFeedback(Text.of(String.format("§7Clipping §a%.0f§7 blocks", pos.y - (int) client.player.getPos().y)));
+            clipTo(pos);
+            return 1;
+        }
+    }
+
+    /**
+     * Automatically go through the nearest blocks in the given direction.
+     * Credits to @EnderKill98 for the original code.
+     */
+    private static Vec3d getAutoClipPos(int direction) {
+        if (client.player == null || client.world == null) return null;
+
+        boolean inside = false;
+        for (float i = 0; i < 150; i += 0.25) {
+            Vec3d pos = client.player.getPos();
+            Vec3d targetPos = pos.add(0, direction * i, 0);
+
+            boolean collides = !client.world.isSpaceEmpty(client.player, client.player.getBoundingBox().offset(targetPos.subtract(pos)));
+
+            if (!inside && collides) {  // Step 1: Into the blocks
+                inside = true;
+            } else if (inside && !collides) {  // Step 2: Out of the blocks
+                return targetPos;
+            }
+        }
+
+        return null;  // Nothing found
     }
 }

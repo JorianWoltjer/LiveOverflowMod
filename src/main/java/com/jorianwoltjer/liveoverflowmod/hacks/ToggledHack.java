@@ -91,6 +91,7 @@ public abstract class ToggledHack {
     public void message(String message) {
         if (client.player == null) return;
 
+        // TODO: maybe convert all white text to gray
         client.player.sendMessage(Text.of(PREFIX + name + ": " + message), true);
     }
 
