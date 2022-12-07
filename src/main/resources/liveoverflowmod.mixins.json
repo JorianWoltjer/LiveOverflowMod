@@ -4,6 +4,8 @@
   "package": "com.jorianwoltjer.liveoverflowmod.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "ClientConnectionAccessor",
+    "ClientConnectionMixin",
     "ClientPlayerInteractionMixin",
     "LivingEntityMixin",
     "PlayerPositionFullPacketMixin",
