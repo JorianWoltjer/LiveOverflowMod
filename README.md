@@ -7,7 +7,7 @@ and some utilities.
 
 ## Hacks
 
-### Anti-Human Bypass
+### Anti-Human Bypass <kbd>-</kbd>
 
 All movement packets need to be rounded to the 100ths. This is done using a simple `Math.round()` function, 
 and to fix floating point errors the `Math.nextAfter()` function is used.
@@ -21,7 +21,7 @@ Same as above, but for the `PlayerMoveC2SPacket.PositionAndOnGround` packet
 * [VehicleMovePacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/VehicleMovePacketMixin.java):
 Same as above, but for riding a vehicle like a boat
 
-### WorldGuard Bypass
+### WorldGuard Bypass <kbd>;</kbd>
 
 WorldGuard was used to deny `entry` to a protected area, in which the player had to die in the lava to complete the challenge. 
 WorldGuard works using `PlayerMoveEvent`s and this bypass works by moving without triggering this event.  
@@ -31,7 +31,7 @@ This means it can only move `0.06` blocks per tick, and then has to send a posit
 for the next repeat. However, this can be improved because WorldGuard only checks regions when you cross a block boundary. 
 So when we can move almost a full block while not crossing the boundary, and then only move a small amount to cross the boundary. 
 
-When this hack is activated using the default `;` (semicolon) keybind, it will allow you to move in this way with your `WASD` keys.  
+When this hack is activated using the default <kbd>;</kbd> (semicolon) keybind, it will allow you to move in this way with your `WASD` keys.  
 To activate the **faster** movement mode, you can press your **sprint** key (or toggle). This will enable the trick to
 move faster by moving almost a full block without crossing the boundary, but won't always work in some other plugins that detect `PlayerMoveEvent`s 
 without taking this shortcut. 
@@ -41,7 +41,7 @@ When the keybind is pressed, `worldGuardBypassEnabled` is activated and `WASD` k
 * [LivingEntityMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/LivingEntityMixin.java):
 Redirect the `isImmobile()` method to return true when the hack is enabled, so the normal player movement is disabled
 
-### Insta-Mine
+### Insta-Mine <kbd>-</kbd>
 
 This hack is a simple one useful in some situations. When you try to break a block, it will send `START_DESTROY_BLOCK` action to the server. 
 When you as the client are done breaking the block, it will send `STOP_DESTROY_BLOCK` to the server, and it will verify 
