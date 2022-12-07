@@ -21,6 +21,7 @@
     "ClientPlayerInteractionManagerAccessor",
     "ClientPlayNetworkHandlerMixin",
     "GameStateChangeS2CPacketAccessor",
-    "MinecraftClientMixin"
+    "MinecraftClientMixin",
+    "SessionMixin"
   ]
 }

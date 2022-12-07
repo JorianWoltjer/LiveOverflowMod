@@ -81,6 +81,24 @@ public class ClipCommand {
             )
         );
 
+        dispatcher.register(literal("hclip")  // Horizontal clip (up -> horizontal -> down: to go through walls)
+                .then(argument("distance", integer())
+                        .executes(context -> {
+                            int distance = context.getArgument("distance", Integer.class);
+
+                            assert client.player != null;
+
+                            // Move `direction` blocks into viewing direction
+                            Vec3d targetPos = client.player.getPos().add(
+                                    client.player.getRotationVector().multiply(1, 0, 1).normalize().multiply(distance)
+                            );
+                            clipUpDown(targetPos);
+
+                            return 1;
+                        })
+                )
+        );
+
         dispatcher.register(literal("dclip")  // Directional clip
             .then(argument("distance", integer())
                 .executes(context -> {
@@ -116,23 +134,6 @@ public class ClipCommand {
 
                 return 1;
             })
-        );
-
-        dispatcher.register(literal("hclip")  // Horizontal clip (up -> horizontal -> down: to go through walls)
-            .then(argument("distance", integer())
-                .executes(context -> {
-                    int distance = context.getArgument("distance", Integer.class);
-
-                    assert client.player != null;
-                    // Move `direction` blocks into viewing direction
-                    Vec3d targetPos = client.player.getPos().add(
-                        client.player.getRotationVector().multiply(1, 0, 1).normalize().multiply(distance)
-                    );
-                    clipUpDown(targetPos);
-
-                    return 1;
-                })
-            )
         );
     }
 
