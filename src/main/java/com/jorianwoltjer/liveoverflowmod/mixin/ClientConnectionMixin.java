@@ -48,7 +48,7 @@ public class ClientConnectionMixin {
     // Delay other packets while any packets in packetQueue
     @Inject(method = "send*", at = @At("HEAD"), cancellable = true)
     private void normalSend(Packet<?> packet, CallbackInfo ci) {
-        if (packetQueue.size() > 0) {
+        if (packetQueue.size() > 0 || worldGuardBypassHack.enabled) {  // WorldGuard Bypass also needs it for anti-flykick to work
             packetQueue.add(packet);  // Do send them later
             ci.cancel();
         }

@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.passiveMods;
+import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.worldGuardBypassHack;
 
 @Mixin(PlayerMoveC2SPacket.Full.class)
 public abstract class PlayerPositionFullPacketMixin {
