@@ -3,14 +3,10 @@ package com.jorianwoltjer.liveoverflowmod.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.Packet;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -18,6 +14,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
+import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 
@@ -68,7 +65,7 @@ public class ClipCommand {
                 })
         );
 
-        dispatcher.register(literal("vclip")
+        dispatcher.register(literal("vclip")  // Vertical clip
             .then(argument("distance", integer())
                 .executes(context -> {
                     int distance = context.getArgument("distance", Integer.class);
@@ -77,14 +74,14 @@ public class ClipCommand {
                     Vec3d pos = player.getPos();
                     Vec3d targetPos = pos.add(0, distance, 0);
 
-                    clipTo(targetPos);
+                    clipStraight(targetPos);
 
                     return 1;
                 })
             )
         );
 
-        dispatcher.register(literal("hclip")
+        dispatcher.register(literal("dclip")  // Directional clip
             .then(argument("distance", integer())
                 .executes(context -> {
                     int distance = context.getArgument("distance", Integer.class);
@@ -92,9 +89,9 @@ public class ClipCommand {
 
                     Vec3d pos = player.getPos();
                     // Move into players viewing direction
-                    Vec3d targetPos = pos.add(player.getRotationVector().multiply(1, 0, 1).multiply(distance));
+                    Vec3d targetPos = pos.add(player.getRotationVector().normalize().multiply(distance));
 
-                    clipTo(targetPos);
+                    clipStraight(targetPos);
 
                     return 1;
                 })
@@ -111,39 +108,62 @@ public class ClipCommand {
         );
 
         dispatcher.register(literal("clubmate")
+            .executes(context -> {
+                clipStraight(new Vec3d(1331, 89, 1330));  // Next to chest
+
+                assert client.player != null;
+                interactAt(new BlockPos(1331, 89, 1331));  // Chest
+
+                return 1;
+            })
+        );
+
+        dispatcher.register(literal("hclip")  // Horizontal clip (up -> horizontal -> down: to go through walls)
+            .then(argument("distance", integer())
                 .executes(context -> {
-                    clipTo(new Vec3d(1331, 89, 1330));
+                    int distance = context.getArgument("distance", Integer.class);
 
                     assert client.player != null;
-                    interactAt(new BlockPos(1331, 89, 1331));  // Chest
+                    // Move `direction` blocks into viewing direction
+                    Vec3d targetPos = client.player.getPos().add(
+                        client.player.getRotationVector().multiply(1, 0, 1).normalize().multiply(distance)
+                    );
+                    clipUpDown(targetPos);
 
                     return 1;
                 })
+            )
         );
     }
 
-    private static void clipTo(Vec3d targetPos) {
+    private static void clipStraight(Vec3d targetPos) {
         if (client.player == null) return;
 
         Vec3d pos = client.player.getPos();
 
-        Packet<?> homePacket;
-        Packet<?> targetPacket;
-        if (client.player.getVehicle() != null) {
-            homePacket = new VehicleMoveC2SPacket(client.player.getVehicle());
-            client.player.getVehicle().setPosition(targetPos);
-            targetPacket = new VehicleMoveC2SPacket(client.player.getVehicle());
-        } else {
-            homePacket = new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, false);
-            targetPacket = new PlayerMoveC2SPacket.PositionAndOnGround(targetPos.x, targetPos.y, targetPos.z, false);
-        }
-
         for (int i = 0; i < 18; i++) {  // Send a lot of the same movement packets to increase max travel distance
-            networkHandler.sendPacket(homePacket);
+            moveTo(pos);
         }
         // Send one big movement packet to actually move the player
-        networkHandler.sendPacket(targetPacket);
-        client.player.setPosition(targetPos);
+        moveTo(targetPos);
+    }
+
+    private static void clipUpDown(Vec3d targetPos) {
+        if (client.player == null) return;
+
+        Vec3d pos = client.player.getPos();
+
+        for (int i = 0; i < 15; i++) {  // Send a lot of the same movement packets to increase max travel distance
+            moveTo(pos);
+        }
+
+        pos = pos.add(0, 100, 0);  // Up
+        moveTo(pos);
+
+        pos = new Vec3d(targetPos.x, pos.y, targetPos.z);  // Horizontal
+        moveTo(pos);
+
+        moveTo(targetPos);  // Down
     }
 
     private static int executeAutoClip(CommandContext<FabricClientCommandSource> context, int direction) {
@@ -155,7 +175,7 @@ public class ClipCommand {
             return 0;
         } else {
             context.getSource().sendFeedback(Text.of(String.format("§7Clipping §a%.0f§7 blocks", pos.y - (int) client.player.getPos().y)));
-            clipTo(pos);
+            clipStraight(pos);
             return 1;
         }
     }
@@ -182,5 +202,17 @@ public class ClipCommand {
         }
 
         return null;  // Nothing found
+    }
+
+    private static void moveTo(Vec3d pos) {
+        if (client.player == null) return;
+
+        if (client.player.getVehicle() != null) {
+            client.player.getVehicle().setPosition(pos);
+            networkHandler.sendPacket(new VehicleMoveC2SPacket(client.player.getVehicle()));
+        } else {
+            client.player.setPosition(pos);
+            networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+        }
     }
 }
