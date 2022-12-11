@@ -2,6 +2,8 @@ package com.jorianwoltjer.liveoverflowmod.helper;
 
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
+import java.util.LinkedList;
+
 public class Utils {
 
     public static double roundCoordinate(double n) {
@@ -23,5 +25,10 @@ public class Utils {
         args.set(2, z);
     }
 
+    @SuppressWarnings("SameParameterValue")
+    public static <T> void insertToCenter(LinkedList<T> list, T object) {
+        int middle = (list.size() + 1) / 2;  // Rounded up
+        list.add(middle, object);
+    }
 
 }

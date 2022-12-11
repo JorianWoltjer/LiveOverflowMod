@@ -137,6 +137,18 @@ public class ClipCommand {
         );
     }
 
+    private static void moveTo(Vec3d pos) {
+        if (client.player == null) return;
+
+        if (client.player.getVehicle() != null) {
+            client.player.getVehicle().setPosition(pos);
+            networkHandler.sendPacket(new VehicleMoveC2SPacket(client.player.getVehicle()));
+        } else {
+            client.player.setPosition(pos);
+            networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
+        }
+    }
+
     private static void clipStraight(Vec3d targetPos) {
         if (client.player == null) return;
 
@@ -203,17 +215,5 @@ public class ClipCommand {
         }
 
         return null;  // Nothing found
-    }
-
-    private static void moveTo(Vec3d pos) {
-        if (client.player == null) return;
-
-        if (client.player.getVehicle() != null) {
-            client.player.getVehicle().setPosition(pos);
-            networkHandler.sendPacket(new VehicleMoveC2SPacket(client.player.getVehicle()));
-        } else {
-            client.player.setPosition(pos);
-            networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
-        }
     }
 }
