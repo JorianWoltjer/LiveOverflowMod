@@ -21,19 +21,21 @@ public class ClientEntrypoint implements ClientModInitializer {
     public static final PassiveMods passiveMods = new PassiveMods();
     public static final WorldGuardBypass worldGuardBypassHack = new WorldGuardBypass();
     public static final Reach reachHack = new Reach();
+    public static final ClipReach clipReachHack = new ClipReach();
     public static final PanicMode panicModeHack = new PanicMode();
-    public static final FastBreak fastBreakHack = new FastBreak();
+    public static final BlockMiner fastBreakHack = new BlockMiner();
     public static final ToggledHack[] toggledHacks = new ToggledHack[] {
             passiveMods,
             worldGuardBypassHack,
             reachHack,
+            clipReachHack,
             panicModeHack,
             fastBreakHack
     };
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static ClientPlayNetworkHandler networkHandler;
     public static int globalTimer = 0;
-    public static final LinkedList<Packet<?>> packetQueue = new LinkedList<>();
+    public static final LinkedList<Packet<?>> packetQueue = new LinkedList<>();  // Max 5 per tick
 
     @Override
     public void onInitializeClient() {
@@ -43,11 +45,11 @@ public class ClientEntrypoint implements ClientModInitializer {
             ClientTickEvents.END_CLIENT_TICK.register(hack::tick);  // Every tick
         }
 
-        ClientTickEvents.END_CLIENT_TICK.register(ClientEntrypoint::tick);  // Every tick
+        ClientTickEvents.END_CLIENT_TICK.register(ClientEntrypoint::tickEnd);  // End of every tick
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> registerCommands(dispatcher));  // Commands
     }
 
-    public static void tick(MinecraftClient client) {
+    public static void tickEnd(MinecraftClient client) {
         // Update variables
         networkHandler = client.getNetworkHandler();
         globalTimer++;
@@ -61,7 +63,6 @@ public class ClientEntrypoint implements ClientModInitializer {
             }
             ((ClientConnectionInvoker) networkHandler.getConnection())._sendImmediately(packet, null);
         }
-
     }
 
     public static void registerCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {

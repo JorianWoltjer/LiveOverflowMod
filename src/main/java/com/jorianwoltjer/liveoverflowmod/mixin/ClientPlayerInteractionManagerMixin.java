@@ -19,9 +19,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.LinkedList;
-
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
+import static com.jorianwoltjer.liveoverflowmod.command.ClipCommand.moveTo;
+import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.jorianwoltjer.liveoverflowmod.helper.Utils.insertToCenter;
 
 @Mixin(ClientPlayerInteractionManager.class)
@@ -49,48 +49,28 @@ public class ClientPlayerInteractionManagerMixin {
     private void attackEntity(PlayerEntity player, Entity target, CallbackInfo ci) {
         if (client.player == null) return;
 
-        if (reachHack.enabled) {
-            if (packetQueue.size() > 0) {
-                return;  // Already running
-            }
-            String targetName;
-            if (target.getType().equals(EntityType.PLAYER)) {
-                targetName = target.getName().getString();
-            } else {
-                targetName = target.getType().getName().getString();
-            }
-            reachHack.message(String.format("Hit §a%s §r(%.1fm)", targetName, target.distanceTo(client.player)));
+        if (reachHack.enabled || clipReachHack.enabled) {
+            Vec3d pos = client.player.getPos();
 
-            Vec3d virtualPosition = client.player.getPos();
-            Vec3d targetPos = target.getPos().subtract(  // Subtract a bit from the end
-                    target.getPos().subtract(virtualPosition).normalize().multiply(2)
-            );
-            // If player is too far away, move closer
-            while (target.squaredDistanceTo(virtualPosition.add(0, client.player.getStandingEyeHeight(), 0)) >= MathHelper.square(6.0)) {
-                Vec3d movement = targetPos.subtract(virtualPosition);
-
-                boolean lastPacket = false;
-                if (movement.lengthSquared() >= 100) {  // Length squared is max 100 (otherwise "moved too quickly")
-                    // Normalize to length 10
-                    movement = movement.normalize().multiply(9.9);
-                } else {  // If short enough, this is last packet
-                    lastPacket = true;
+            // If player is too far away, needs reach
+            if (target.squaredDistanceTo(pos.add(0, client.player.getStandingEyeHeight(), 0)) >= MathHelper.square(6.0)) {
+                String targetName;
+                if (target.getType().equals(EntityType.PLAYER)) {
+                    targetName = target.getName().getString();
+                } else {
+                    targetName = target.getType().getName().getString();
                 }
-                virtualPosition = virtualPosition.add(movement);
-                // Add forward and backwards packets
-                insertToCenter(packetQueue, new PlayerMoveC2SPacket.PositionAndOnGround(virtualPosition.x, virtualPosition.y, virtualPosition.z, true));
-                if (!lastPacket) {  // If not the last packet, add a backwards packet (only need one at the sheep)
-                    insertToCenter(packetQueue, new PlayerMoveC2SPacket.PositionAndOnGround(virtualPosition.x, virtualPosition.y, virtualPosition.z, true));
-                }
-            }
-            // Add hit packet in the middle and original position at the end
-            insertToCenter(packetQueue, PlayerInteractEntityC2SPacket.attack(target, client.player.isSneaking()));
-            packetQueue.add(new PlayerMoveC2SPacket.PositionAndOnGround(client.player.getX(), client.player.getY(), client.player.getZ(), true));
-            packetQueue.add(new HandSwingC2SPacket(client.player.getActiveHand()));  // Serverside animation
-            client.player.resetLastAttackedTicks();  // Reset attack cooldown
 
-            ci.cancel();
+                if (reachHack.enabled) {
+                    reachHack.message(String.format("Hit §a%s §r(§b%.0fm§r)", targetName, target.distanceTo(client.player)));
+                    reachHack.hitEntity(target);
+                } else if (clipReachHack.enabled) {
+                    clipReachHack.message(String.format("Hit §a%s §r(§b%.0fm§r)", targetName, target.distanceTo(client.player)));
+                    clipReachHack.hitEntity(target);
+                }
+
+                ci.cancel();
+            }
         }
     }
-
 }

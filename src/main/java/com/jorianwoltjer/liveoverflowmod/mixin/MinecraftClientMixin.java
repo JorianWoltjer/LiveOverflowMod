@@ -22,9 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.LinkedList;
 import java.util.Optional;
 
-import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
-import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.packetQueue;
-import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.reachHack;
+import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 
 @Mixin(MinecraftClient.class)
 public class MinecraftClientMixin {
@@ -32,7 +30,7 @@ public class MinecraftClientMixin {
     // Extend reach
     @Inject(method = "doAttack", at = @At(value = "HEAD"))
     private void doAttack(CallbackInfoReturnable<Boolean> cir) {
-        if (reachHack.enabled) {
+        if (reachHack.enabled || clipReachHack.enabled) {
             MinecraftClient client = MinecraftClient.getInstance();
             Optional<Entity> entity = DebugRenderer.getTargetedEntity(client.player, 100);
             entity.ifPresent(e -> client.crosshairTarget = new EntityHitResult(e));

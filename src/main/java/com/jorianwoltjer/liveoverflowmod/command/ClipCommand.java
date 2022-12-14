@@ -137,7 +137,7 @@ public class ClipCommand {
         );
     }
 
-    private static void moveTo(Vec3d pos) {
+    public static void moveTo(Vec3d pos) {
         if (client.player == null) return;
 
         if (client.player.getVehicle() != null) {
@@ -149,7 +149,7 @@ public class ClipCommand {
         }
     }
 
-    private static void clipStraight(Vec3d targetPos) {
+    public static void clipStraight(Vec3d targetPos) {
         if (client.player == null) return;
 
         Vec3d pos = client.player.getPos();
@@ -161,7 +161,7 @@ public class ClipCommand {
         moveTo(targetPos);
     }
 
-    private static void clipUpDown(Vec3d targetPos) {
+    public static void clipUpDown(Vec3d targetPos) {
         if (client.player == null) return;
 
         Vec3d pos = client.player.getPos();
@@ -179,7 +179,7 @@ public class ClipCommand {
         moveTo(targetPos);  // Down
     }
 
-    private static int executeAutoClip(CommandContext<FabricClientCommandSource> context, int direction) {
+    public static int executeAutoClip(CommandContext<FabricClientCommandSource> context, int direction) {
         if (client.player == null) return 0;
 
         Vec3d pos = getAutoClipPos(direction);
@@ -197,7 +197,7 @@ public class ClipCommand {
      * Automatically go through the nearest blocks in the given direction.
      * Credits to @EnderKill98 for the original code.
      */
-    private static Vec3d getAutoClipPos(int direction) {
+    public static Vec3d getAutoClipPos(int direction) {
         if (client.player == null || client.world == null) return null;
 
         boolean inside = false;

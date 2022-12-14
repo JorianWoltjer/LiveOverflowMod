@@ -3,6 +3,7 @@ package com.jorianwoltjer.liveoverflowmod.hacks;
 import com.jorianwoltjer.liveoverflowmod.mixin.ClientConnectionMixin;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.item.MiningToolItem;
 import net.minecraft.network.packet.c2s.play.ClientStatusC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
@@ -20,7 +21,7 @@ import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.networkHandler;
 
-public class FastBreak extends ToggledHack {
+public class BlockMiner extends ToggledHack {
     BlockPos targetPos;
     int timer;
     public Item itemToPlace;
@@ -34,8 +35,8 @@ public class FastBreak extends ToggledHack {
      * more blocks of that type from your inventory if it runs out.
      * @see ClientConnectionMixin
      */
-    public FastBreak() {
-        super("Fast Break", GLFW.GLFW_KEY_LEFT_BRACKET);
+    public BlockMiner() {
+        super("Block Miner", GLFW.GLFW_KEY_BACKSLASH);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class FastBreak extends ToggledHack {
                 client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot, 40, SlotActionType.SWAP, client.player);
             }
 
-            placeAt(targetPos);
+            placeOffhandAt(targetPos);
             networkHandler.sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, targetPos, Direction.UP));
             networkHandler.sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, targetPos, Direction.UP));
         }
@@ -74,6 +75,12 @@ public class FastBreak extends ToggledHack {
         statsTimer = 0;
         statsValue = -1;
         itemToPlace = client.player.getOffHandStack().getItem();
+
+        if (itemToPlace == Items.AIR) {
+            message("§cNo block in offhand");
+            enabled = false;
+            return;
+        }
 
         networkHandler.sendPacket(new ClientStatusC2SPacket(ClientStatusC2SPacket.Mode.REQUEST_STATS));  // Send initial
 
@@ -89,17 +96,17 @@ public class FastBreak extends ToggledHack {
     public void onStatResponse(Integer newValue) {  // Will get a callback from ClientConnectionMixin
         if (!enabled || client.player == null) return;
 
-        if (statsValue == -1) {  // Initial value
-            statsValue = newValue;
-        }
         if (newValue == null) {  // If not updated, value will be null
             newValue = statsValue;
         }
+        if (statsValue == -1) {  // Initial value
+            statsValue = newValue;
+        }
 
-        client.player.sendMessage(Text.of(String.format(PREFIX + "%s: §b%d§r/min (§a%d§r total)",
+        client.player.sendMessage(Text.of(String.format(PREFIX + "%s: §b%d§r/min (§a%s§r total)",
                 itemToPlace.getName().getString(),
                 newValue - statsValue,
-                newValue
+                newValue == -1 ? "?" : newValue
         )), false);
 
         statsValue = newValue;
@@ -117,7 +124,7 @@ public class FastBreak extends ToggledHack {
         return -1;  // Not found
     }
 
-    public static void placeAt(BlockPos pos) {
+    public static void placeOffhandAt(BlockPos pos) {
         BlockHitResult hitResult = new BlockHitResult(
                 new Vec3d(pos.getX(), pos.getY(), pos.getZ()),
                 Direction.UP,
