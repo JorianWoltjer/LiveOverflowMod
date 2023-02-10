@@ -5,10 +5,10 @@ import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
@@ -20,9 +20,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
-import static com.jorianwoltjer.liveoverflowmod.command.ClipCommand.moveTo;
-import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
-import static com.jorianwoltjer.liveoverflowmod.helper.Utils.insertToCenter;
 
 @Mixin(ClientPlayerInteractionManager.class)
 public class ClientPlayerInteractionManagerMixin {
@@ -73,4 +70,30 @@ public class ClientPlayerInteractionManagerMixin {
             }
         }
     }
+
+    // On interact, use Reach
+    @Inject(method = "interactEntityAtLocation", at = @At(value = "HEAD"), cancellable = true)
+    private void interactEntityAtLocation(PlayerEntity player, Entity entity, EntityHitResult hitResult, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
+        if (client.player == null) return;
+
+        if (clipReachHack.enabled && hand.equals(Hand.MAIN_HAND)) {
+            Vec3d pos = client.player.getPos();
+
+            // If player is too far away, needs reach
+            if (entity.squaredDistanceTo(pos.add(0, client.player.getStandingEyeHeight(), 0)) >= MathHelper.square(6.0)) {
+                String targetName;
+                if (entity.getType().equals(EntityType.PLAYER)) {
+                    targetName = entity.getName().getString();
+                } else {
+                    targetName = entity.getType().getName().getString();
+                }
+
+                clipReachHack.message(String.format("Interacted with §a%s §r(§b%.0fm§r)", targetName, entity.distanceTo(client.player)));
+                clipReachHack.interactAtEntity(entity);
+
+                cir.setReturnValue(ActionResult.SUCCESS);
+            }
+        }
+    }
+
 }

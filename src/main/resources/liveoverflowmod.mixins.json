@@ -17,10 +17,10 @@
     "defaultRequire": 1
   },
   "client": [
-    "ClientPlayerEntityAccessor",
-    "ClientPlayerInteractionManagerAccessor",
     "ClientPlayNetworkHandlerMixin",
     "GameStateChangeS2CPacketAccessor",
+    "InGameHudAccessor",
+    "InGameHudMixin",
     "MinecraftClientMixin",
     "SessionMixin"
   ]

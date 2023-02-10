@@ -14,7 +14,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
-import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 
@@ -148,6 +147,20 @@ public class ClipCommand {
             networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.x, pos.y, pos.z, true));
         }
     }
+    public static void moveTo(Vec3d pos, float yaw, float pitch) {
+        if (client.player == null) return;
+
+        if (client.player.getVehicle() != null) {
+            client.player.getVehicle().setPosition(pos);
+            networkHandler.sendPacket(new VehicleMoveC2SPacket(client.player.getVehicle()));
+        } else {
+            client.player.setPosition(pos);
+            networkHandler.sendPacket(new PlayerMoveC2SPacket.Full(
+                    pos.x, pos.y, pos.z,
+                    yaw, pitch,
+                    client.player.isOnGround()));
+        }
+    }
 
     public static void clipStraight(Vec3d targetPos) {
         if (client.player == null) return;
@@ -161,6 +174,7 @@ public class ClipCommand {
         moveTo(targetPos);
     }
 
+    // TODO: maybe refactor this to be the same as ClipReach#hitEntity
     public static void clipUpDown(Vec3d targetPos) {
         if (client.player == null) return;
 

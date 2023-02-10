@@ -13,4 +13,5 @@ public class LivingEntityMixin {
     private boolean isImmobile(net.minecraft.entity.LivingEntity livingEntity) {
         return worldGuardBypassHack.enabled;
     }
+
 }
