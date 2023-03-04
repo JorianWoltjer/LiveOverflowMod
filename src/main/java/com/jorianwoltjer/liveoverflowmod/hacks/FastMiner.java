@@ -21,7 +21,7 @@ import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.PREFIX;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.client;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.networkHandler;
 
-public class BlockMiner extends ToggledHack {
+public class FastMiner extends ToggledHack {
     BlockPos targetPos;
     int timer;
     public Item itemToPlace;
@@ -35,8 +35,8 @@ public class BlockMiner extends ToggledHack {
      * more blocks of that type from your inventory if it runs out.
      * @see ClientConnectionMixin
      */
-    public BlockMiner() {
-        super("Block Miner", GLFW.GLFW_KEY_BACKSLASH);
+    public FastMiner() {
+        super("Fast Miner", GLFW.GLFW_KEY_BACKSLASH);
     }
 
     @Override

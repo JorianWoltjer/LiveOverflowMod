@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.Packet;
@@ -23,14 +24,14 @@ public class ClientEntrypoint implements ClientModInitializer {
     public static final Reach reachHack = new Reach();
     public static final ClipReach clipReachHack = new ClipReach();
     public static final PanicMode panicModeHack = new PanicMode();
-    public static final BlockMiner fastBreakHack = new BlockMiner();
+    public static final FastMiner fastMinerHack = new FastMiner();
     public static final ToggledHack[] toggledHacks = new ToggledHack[] {
             passiveMods,
             worldGuardBypassHack,
             reachHack,
             clipReachHack,
             panicModeHack,
-            fastBreakHack
+            fastMinerHack
     };
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static ClientPlayNetworkHandler networkHandler;
@@ -47,6 +48,8 @@ public class ClientEntrypoint implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(ClientEntrypoint::tickEnd);  // End of every tick
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> registerCommands(dispatcher));  // Commands
+
+        HudRenderCallback.EVENT.register(Gui::render);  // Render GUI
     }
 
     public static void tickEnd(MinecraftClient client) {

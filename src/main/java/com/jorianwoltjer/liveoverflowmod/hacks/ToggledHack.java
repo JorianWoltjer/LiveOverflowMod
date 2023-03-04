@@ -61,7 +61,7 @@ public abstract class ToggledHack {
      */
     public void enable() {
         enabled = true;
-        message("§aEnabled");
+        message("§aON");
         LOGGER.info("Enabled " + name);
         onEnable();
     }
@@ -75,7 +75,7 @@ public abstract class ToggledHack {
      */
     public void disable() {
         enabled = false;
-        message("§cDisabled");
+        message("§cOFF");
         LOGGER.info("Disabled " + name);
         onDisable();
     }

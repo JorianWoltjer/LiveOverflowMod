@@ -6,9 +6,6 @@ import net.minecraft.network.ClientConnection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.listener.PacketListener;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
 import net.minecraft.network.packet.s2c.play.StatisticsS2CPacket;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
@@ -18,10 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.time.ZonedDateTime;
-
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
-import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 
 @Mixin(ClientConnection.class)
 public class ClientConnectionMixin {
@@ -44,8 +38,8 @@ public class ClientConnectionMixin {
         // Save statistics response
         if (packet instanceof StatisticsS2CPacket statsPacket) {
             // Get mined stat for FastBreak
-            Integer statsValue = statsPacket.getStatMap().get(Stats.MINED.getOrCreateStat(Block.getBlockFromItem(fastBreakHack.itemToPlace)));
-            fastBreakHack.onStatResponse(statsValue);
+            Integer statsValue = statsPacket.getStatMap().get(Stats.MINED.getOrCreateStat(Block.getBlockFromItem(fastMinerHack.itemToPlace)));
+            fastMinerHack.onStatResponse(statsValue);
         }
 
 //        if (packet instanceof PlayerPositionLookS2CPacket _packet) {
