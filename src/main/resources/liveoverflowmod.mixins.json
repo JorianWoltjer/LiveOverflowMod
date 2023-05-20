@@ -4,9 +4,10 @@
   "package": "com.jorianwoltjer.liveoverflowmod.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ClientConnectionAccessor",
+    "AbstractBlockMixin",
+    "ClientConnectionInvoker",
     "ClientConnectionMixin",
-    "ClientPlayerInteractionMixin",
+    "ClientPlayerInteractionManagerMixin",
     "LivingEntityMixin",
     "PlayerPositionFullPacketMixin",
     "PlayerPositionPacketMixin",
@@ -16,5 +17,11 @@
     "defaultRequire": 1
   },
   "client": [
+    "ClientPlayNetworkHandlerMixin",
+    "GameStateChangeS2CPacketAccessor",
+    "InGameHudAccessor",
+    "InGameHudMixin",
+    "MinecraftClientMixin",
+    "SessionMixin"
   ]
 }
