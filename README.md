@@ -9,7 +9,7 @@ and some utilities.
 
 ### WorldGuard Bypass <kbd>;</kbd>
 
-WorldGuard was used to deny `entry` to a protected area, in which the player had to die in the lava to complete the challenge. 
+WorldGuard was used to deny "entry" to a protected area, in which the player had to die in the lava to complete the challenge. 
 WorldGuard works using `PlayerMoveEvent`s and this bypass works by moving without triggering this event.  
 
 Only when movement is large enough, an event is sent. So we can move a small amount, and then save the position by "moving too quickly!". 
@@ -28,8 +28,8 @@ Redirect the `isImmobile()` method to return true when the hack is enabled, so t
 
 ### Reach <kbd>]</kbd>
 
-While reading the movement code, I found that it is possible to send a position packet a maximum of `10` blocks away from the current position.
-But also that you can send `5` packets per tick, so you can move 50 blocks in a single tick. This gave me the idea of making
+While reading the movement code, I found that it is possible to send a position packet a maximum of 10 blocks away from the current position.
+But also that you can send 5 packets per tick, so you can move 50 blocks in a single tick. This gave me the idea of making
 a reach hack that uses this by sending multiple position packets going towards a player, hit them, and then move back. 
 That is exactly what this hack does when you toggle the default <kbd>]</kbd> (right bracket) keybind, and then click on a far away entity as
 if you were hitting them. 
@@ -37,7 +37,7 @@ if you were hitting them.
 > **Warning**:
 > This hack is not perfect. It only works when there is a clear line of sight to the player, and sometimes gets
 > stuck while moving meaning you end up somewhere along traveled path. But it's good enough for a proof of concept!  
-> See [Clip Reach](#clip-reach) for a better version of this hack that teleports through blocks.
+> See [Clip Reach](#clip-reach-) for a better version of this hack that teleports through blocks.
 
 [**YouTube Video - Showcase**](https://www.youtube.com/watch?v=Hio_iDnnJ5c)
 
@@ -146,7 +146,7 @@ Send the `STOP_DESTROY_BLOCK` action packet right after starting to break a bloc
 
 This hack changed the random texture rotation code to use a completely random number every time, so it is not reversible from a screenshot. 
 This was to be able to take screenshots and videos, while not revealing the texture rotations that can be brute-forced easily for coordinates. 
-The same hack was used by LiveOverflow himself to make the challenge of finding his base harder. 
+The same type of mod was used by LiveOverflow himself to make the challenge of finding his base harder. 
 
 * [AbstractBlockMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/AbstractBlockMixin.java):
 Use a randomized hash function to generate block rotations, making it unpredictable
