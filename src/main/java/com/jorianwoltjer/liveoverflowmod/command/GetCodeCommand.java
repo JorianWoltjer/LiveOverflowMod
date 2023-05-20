@@ -2,22 +2,22 @@ package com.jorianwoltjer.liveoverflowmod.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
+import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.math.random.RandomSplitter;
 
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 
+import static net.minecraft.client.util.SelectionManager.setClipboard;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -57,26 +57,31 @@ public class GetCodeCommand {
                                     }
 
                                     ServerWorld world = context.getSource().getWorld();
+                                    StringBuilder code = new StringBuilder();
 
                                     for (BlockPos blockPos : BlockPos.iterate(area.getMinX(), area.getMinY(), area.getMinZ(), area.getMaxX(), area.getMaxY(), area.getMaxZ())) {
-                                        String code = "";
-                                        if (world.getBlockState(blockPos).getBlock() == Blocks.BEDROCK) {  // Is bedrock
+                                        Block block = world.getBlockState(blockPos).getBlock();
+                                        if (block == Blocks.BEDROCK) {
                                             BlockPos pos = blockPos.subtract(start);
-                                            code = String.format("generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) == true", pos.getX(), pos.getY(), pos.getZ());
-                                        } else if (world.getBlockState(blockPos).getBlock() == Blocks.GLASS) {  // Is empty
+                                            code.append(String.format(" generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) &&\n", pos.getX(), pos.getY(), pos.getZ()));
+                                        } else if (block == Blocks.GLASS) {
                                             BlockPos pos = blockPos.subtract(start);
-                                            code = String.format("generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) == false", pos.getX(), pos.getY(), pos.getZ());
-                                        } else if (world.getBlockState(blockPos).getBlock() == Blocks.REDSTONE_BLOCK) {  // Is unused bedrock
+                                            code.append(String.format("!generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) &&\n", pos.getX(), pos.getY(), pos.getZ()));
+                                        } else if (block == Blocks.REDSTONE_BLOCK) {
                                             BlockPos pos = blockPos.subtract(start);
-                                            code = String.format("// generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) == true", pos.getX(), pos.getY(), pos.getZ());
-                                        } else if (world.getBlockState(blockPos).getBlock() == Blocks.RED_STAINED_GLASS) {  // Is unused empty
+                                            code.append(String.format("//  generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) &&\n", pos.getX(), pos.getY(), pos.getZ()));
+                                        } else if (block == Blocks.RED_STAINED_GLASS) {
                                             BlockPos pos = blockPos.subtract(start);
-                                            code = String.format("// generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) == false", pos.getX(), pos.getY(), pos.getZ());
-                                        }
-                                        if (!code.isEmpty()) {
-                                            context.getSource().sendFeedback(Text.of(code), false);
+                                            code.append(String.format("// !generator.is_bedrock(chunk_x + %d, y + %d, chunk_z + %d) &&\n", pos.getX(), pos.getY(), pos.getZ()));
                                         }
                                     }
+
+                                    setClipboard(client, code.toString());
+
+                                    int lineCount = code.toString().split("\n").length;
+                                    context.getSource().sendFeedback(Text.literal("Copied ")
+                                            .append(Text.literal(String.valueOf(lineCount)).formatted(Formatting.GREEN))
+                                            .append(Text.literal(" lines to clipboard")), false);
 
                                     return 1;
                                 })

@@ -3,7 +3,7 @@ package com.jorianwoltjer.liveoverflowmod.mixin;
 import com.jorianwoltjer.liveoverflowmod.hacks.ToggledHack;
 import net.minecraft.block.Block;
 import net.minecraft.network.ClientConnection;
-import net.minecraft.network.Packet;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.listener.PacketListener;
 import net.minecraft.network.packet.s2c.play.StatisticsS2CPacket;
