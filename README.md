@@ -149,6 +149,7 @@ This was to be able to take screenshots and videos, while not revealing the text
 The same hack was used by LiveOverflow himself to make the challenge of finding his base harder. 
 
 * [AbstractBlockMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/AbstractBlockMixin.java):
+Use a randomized hash function to generate block rotations, making it unpredictable
 
 ### Commands
 
@@ -165,7 +166,7 @@ vertically and horizontally. There are 4 common-use commands, and 2 specific one
 * `/vault`: Complete the Vault challenge by clipping through the 50 blocks of bedrock. Start from the button and it will 
 automatically start the challenge, teleport and finish the challenge giving you a mask
 * `/clubmate`: This trick also works on the original Club Mate challenge, it will simply teleport to the chest and open it in one tick
-  
+
 * [ClipCommand.java](src/main/java/com/jorianwoltjer/liveoverflowmod/command/ClipCommand.java):
 Includes all the logic for clipping through walls, as well as the registered commands
 
@@ -196,7 +197,7 @@ which will then find the coordinates of that bedrock formation in a specific see
 1. Select `Minecraft Client` task and click green arrow
 2. Minecraft will start, with logs in IntelliJ
 
-> **Tip**:
+> **Note**:
 > Use the [ViaFabric](https://www.curseforge.com/minecraft/mc-mods/viafabric) mod to connect to any lower version server
 
 ## Resources
