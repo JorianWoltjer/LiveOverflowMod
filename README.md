@@ -7,6 +7,8 @@ and some utilities.
 
 ## Hacks
 
+![Screenshot of the Text UI in the bottom right corner](https://github.com/JorianWoltjer/LiveOverflowMod/assets/26067369/6202a614-5915-49ed-96c6-a6f188a31039)
+
 ### WorldGuard Bypass <kbd>;</kbd>
 
 WorldGuard was used to deny "entry" to a protected area, in which the player had to die in the lava to complete the challenge. 
