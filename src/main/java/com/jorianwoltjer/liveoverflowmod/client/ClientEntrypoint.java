@@ -10,11 +10,13 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
+import net.minecraft.server.command.ServerCommandSource;
 
 import java.util.LinkedList;
 
@@ -47,7 +49,8 @@ public class ClientEntrypoint implements ClientModInitializer {
         }
 
         ClientTickEvents.END_CLIENT_TICK.register(ClientEntrypoint::tickEnd);  // End of every tick
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> registerCommands(dispatcher));  // Commands
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> registerClientCommands(dispatcher));  // Client Commands
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> registerServerCommands(dispatcher));  // Server Commands
 
         HudRenderCallback.EVENT.register(Gui::render);  // Render GUI
     }
@@ -68,7 +71,11 @@ public class ClientEntrypoint implements ClientModInitializer {
         }
     }
 
-    public static void registerCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+    public static void registerClientCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         ClipCommand.register(dispatcher);
+    }
+
+    public static void registerServerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
+        GetCodeCommand.register(dispatcher);
     }
 }
