@@ -14,6 +14,8 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.math.random.RandomSplitter;
 
+import java.util.function.Supplier;
+
 import static com.jorianwoltjer.liveoverflowmod.LiveOverflowMod.LOGGER;
 import static com.jorianwoltjer.liveoverflowmod.client.ClientEntrypoint.*;
 
@@ -34,7 +36,7 @@ public class GetCodeCommand {
 
                             boolean result = checkBedrock(world, pos);  // <--- Try setting a breakpoint here
 
-                            context.getSource().sendFeedback(Text.of("Bedrock at " + pos.getX() + " " + pos.getY() + " " + pos.getZ() +
+                            context.getSource().sendFeedback((Supplier<Text>) Text.of("Bedrock at " + pos.getX() + " " + pos.getY() + " " + pos.getZ() +
                                     ": " + (result ? "§atrue" : "§cfalse")), false);
 
                             return 1;
@@ -79,7 +81,7 @@ public class GetCodeCommand {
                                     setClipboard(client, code.toString());
 
                                     int lineCount = code.toString().split("\n").length;
-                                    context.getSource().sendFeedback(Text.literal("Copied ")
+                                    context.getSource().sendFeedback((Supplier<Text>) Text.literal("Copied ")
                                             .append(Text.literal(String.valueOf(lineCount)).formatted(Formatting.GREEN))
                                             .append(Text.literal(" lines to clipboard")), false);
 
