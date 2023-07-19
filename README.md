@@ -95,7 +95,7 @@ You can toggle all passive mods at once using the default <kbd>-</kbd> (minus) k
 All movement packets need to be rounded to the 100ths. This is done using a simple `Math.round()` function,
 and to fix floating point errors the `Math.nextAfter()` function is used.
 
-* [RoundPosition.java](src/main/java/com/jorianwoltjer/liveoverflowmod/helper/RoundPosition.java):
+* [Utils.java](src/main/java/com/jorianwoltjer/liveoverflowmod/helper/Utils.java):
   Does the rounding calculations
 * [PlayerPositionFullPacketMixin.java](src/main/java/com/jorianwoltjer/liveoverflowmod/mixin/PlayerPositionFullPacketMixin.java):
   Intercept the `PlayerMoveC2SPacket.Full` and round the position when sending it to the server
