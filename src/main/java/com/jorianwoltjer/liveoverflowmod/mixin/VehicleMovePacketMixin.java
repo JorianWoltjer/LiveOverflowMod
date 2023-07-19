@@ -26,7 +26,7 @@ public class VehicleMovePacketMixin {
         if (passiveMods.enabled) {
             return Utils.roundCoordinate(instance.getZ());
         } else {
-            return instance.getX();
+            return instance.getZ();
         }
     }
 }
